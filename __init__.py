@@ -7,7 +7,8 @@ This package provides functionality for managing, installing, and configuring
 LLM models for use with the Ollama API.
 """
 
-from .models import (
+# Import from the pyllm subpackage
+from pyllm.pyllm.models import (
     get_models, 
     get_default_model, 
     set_default_model, 
