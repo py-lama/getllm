@@ -11,6 +11,11 @@ setup(
         "bs4",
         "python-dotenv",
     ],
+    entry_points={
+        'console_scripts': [
+            'pyllm=pyllm.cli:main',
+        ],
+    },
     extras_require={
         'dev': [
             'pytest',
