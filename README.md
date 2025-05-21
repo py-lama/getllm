@@ -1,14 +1,127 @@
-# Pyllm
+# pyllm
 
-A package for managing LLM models with Ollama integration.
+pyllm is a CLI tool for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. Both standard CLI and interactive shell modes are available.
 
-## Features
+---
 
-- Model management for Large Language Models
-- Integration with Ollama API
-- Model installation and configuration
-- Default model selection
-- Model discovery from Ollama's library
+## General Diagram (Mermaid)
+```mermaid
+graph TD
+    A[User] -->|CLI/Interactive| B[pyllm/cli.py]
+    B --> C[models.py]
+    B --> D[interactive_cli.py]
+    C --> E[.env / env.example]
+    C --> F[Ollama API]
+    D --> B
+```
+
+---
+
+## ASCII Diagram: CLI Command Flow
+```
+User
+    |
+    v
++-----------------+
+|   pyllm CLI     |
++-----------------+
+    |
+    v
++-----------------+
+|   models.py     |
++-----------------+
+    |
++-----------------+
+| .env/.example   |
++-----------------+
+    |
++-----------------+
+|  Ollama API     |
++-----------------+
+```
+
+---
+
+## Modes
+
+- **CLI**: `pyllm <command>`
+- **Interactive**: `pyllm -i` or `pyllm interactive`
+
+---
+
+## Key Files
+
+- `pyllm/cli.py` – main CLI
+- `pyllm/interactive_cli.py` – interactive shell with menu and cursor selection
+- `pyllm/models.py` – model logic, .env/env.example handling, Ollama integration
+- `.env`/`env.example` – environment config and default model
+
+---
+
+## Example Usage
+
+### List available models
+```bash
+pyllm list
+```
+
+### Install a model
+```bash
+pyllm install deepseek-coder:6.7b
+```
+
+### Set default model
+```bash
+pyllm set-default deepseek-coder:6.7b
+```
+
+### Show default model
+```bash
+pyllm default
+```
+
+### Update model list from Ollama
+```bash
+pyllm update
+```
+
+### Run interactive mode (menu, cursor selection)
+```bash
+pyllm -i
+```
+
+---
+
+## set_default_model function flow (Mermaid)
+```mermaid
+flowchart TD
+    S[Start] --> C{Does .env exist?}
+    C -- Yes --> R[Update OLLAMA_MODEL in .env]
+    C -- No --> K[Copy env.example to .env]
+    K --> R
+    R --> E[End]
+```
+
+---
+
+## Interactive mode - menu (ASCII)
+```
++--------------------------------+
+|  pyllm - interactive mode       |
++--------------------------------+
+| > List available models         |
+|   Show default model           |
+|   List installed models        |
+|   Install model                |
+|   Set default model            |
+|   Update model list            |
+|   Test default model           |
+|   Exit                         |
++--------------------------------+
+  (navigation: arrow keys + Enter)
+```
+
+---
 
 ## Installation
 
@@ -44,4 +157,4 @@ The package uses the following environment variables:
 - `OLLAMA_MODEL`: The default model to use with Ollama
 
 ## License
-
+This project is licensed under the Apache 2.0 License (see LICENSE file).
