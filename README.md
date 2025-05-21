@@ -49,6 +49,41 @@ User
 
 ---
 
+## Using the Makefile
+
+PyLLM includes a Makefile to simplify common development tasks:
+
+```bash
+# Set up the project (creates a virtual environment and installs dependencies)
+make setup
+
+# Run the API server (default port 8001)
+make run
+
+# Run the API server on a custom port
+make run PORT=8080
+
+# The run-port command is also available for backward compatibility
+make run-port PORT=8080
+
+# Run tests
+make test
+
+# Format code with black
+make format
+
+# Lint code with flake8
+make lint
+
+# Clean up project (remove __pycache__, etc.)
+make clean
+
+# Show all available commands
+make help
+```
+
+---
+
 ## Key Files
 
 - `pyllm/cli.py` – main CLI
