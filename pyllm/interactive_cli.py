@@ -1,9 +1,19 @@
 from pyllm import models
 
+MENU_OPTIONS = [
+    ("Wyświetl dostępne modele", "list"),
+    ("Wyświetl domyślny model", "default"),
+    ("Wyświetl zainstalowane modele", "installed"),
+    ("Zainstaluj model (wybierz z listy)", "wybierz-model"),
+    ("Ustaw domyślny model (wybierz z listy)", "wybierz-default"),
+    ("Aktualizuj listę modeli z ollama.com", "update"),
+    ("Test domyślnego modelu", "test"),
+    ("Wyjdź", "exit")
+]
+
 INTRO = """
 Tryb interaktywny pyllm
-Dostępne komendy: list, install <model>, installed, set-default <model>, default, update, test, exit
-NOWE: wybierz-model [do pobrania], wybierz-default [na domyślny]
+Wybierz numer akcji z menu lub wpisz komendę (np. list, install <model>, ...)
 """
 
 def choose_model(action_desc, callback):
@@ -21,9 +31,16 @@ def choose_model(action_desc, callback):
     except (ValueError, KeyboardInterrupt, EOFError):
         print("Przerwano wybór.")
 
+def print_menu():
+    print("\n=== MENU ===")
+    for i, (desc, _) in enumerate(MENU_OPTIONS, 1):
+        print(f"  [{i}] {desc}")
+    print("Wybierz numer lub wpisz komendę:")
+
 def interactive_shell():
     print(INTRO)
     while True:
+        print_menu()
         try:
             cmd = input("pyllm> ").strip()
         except (EOFError, KeyboardInterrupt):
@@ -31,11 +48,19 @@ def interactive_shell():
             break
         if not cmd:
             continue
-        if cmd in ("exit", "quit"): 
+        # Obsługa wyboru numeru z menu
+        if cmd.isdigit():
+            idx = int(cmd) - 1
+            if 0 <= idx < len(MENU_OPTIONS):
+                cmd = MENU_OPTIONS[idx][1]
+            else:
+                print("Nieprawidłowy numer.")
+                continue
+        args = cmd.split()
+        if args[0] == "exit" or args[0] == "quit": 
             print("Wyjście z trybu interaktywnego.")
             break
-        args = cmd.split()
-        if args[0] == "list":
+        elif args[0] == "list":
             models_list = models.get_models()
             print("\nDostępne modele:")
             for m in models_list:
