@@ -10,6 +10,7 @@ setup(
         "requests",
         "bs4",
         "python-dotenv",
+        "questionary",
     ],
     entry_points={
         'console_scripts': [

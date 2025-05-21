@@ -1,4 +1,5 @@
 from pyllm import models
+import questionary
 
 MENU_OPTIONS = [
     ("Wyświetl dostępne modele", "list"),
@@ -13,49 +14,36 @@ MENU_OPTIONS = [
 
 INTRO = """
 Tryb interaktywny pyllm
-Wybierz numer akcji z menu lub wpisz komendę (np. list, install <model>, ...)
+Poruszaj się po menu strzałkami, zatwierdzaj Enterem lub wpisz komendę (np. install <model>)
 """
 
 def choose_model(action_desc, callback):
     models_list = models.get_models()
-    print(f"\nDostępne modele do {action_desc}:")
-    for idx, m in enumerate(models_list):
-        print(f"  [{idx+1}] {m.get('name', '-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}")
-    try:
-        num = int(input(f"Podaj numer modelu do {action_desc}: "))
-        if 1 <= num <= len(models_list):
-            model_name = models_list[num-1]['name']
-            callback(model_name)
-        else:
-            print("Nieprawidłowy numer.")
-    except (ValueError, KeyboardInterrupt, EOFError):
+    choices = [
+        questionary.Choice(
+            title=f"{m.get('name','-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}",
+            value=m['name']
+        ) for m in models_list
+    ]
+    answer = questionary.select(
+        f"Wybierz model do {action_desc}:", choices=choices
+    ).ask()
+    if answer:
+        callback(answer)
+    else:
         print("Przerwano wybór.")
-
-def print_menu():
-    print("\n=== MENU ===")
-    for i, (desc, _) in enumerate(MENU_OPTIONS, 1):
-        print(f"  [{i}] {desc}")
-    print("Wybierz numer lub wpisz komendę:")
 
 def interactive_shell():
     print(INTRO)
     while True:
-        print_menu()
-        try:
-            cmd = input("pyllm> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print("\nWyjście z trybu interaktywnego.")
+        answer = questionary.select(
+            "Wybierz akcję z menu:",
+            choices=[questionary.Choice(title=desc, value=cmd) for desc, cmd in MENU_OPTIONS]
+        ).ask()
+        if not answer:
+            print("Przerwano lub wyjście z menu.")
             break
-        if not cmd:
-            continue
-        # Obsługa wyboru numeru z menu
-        if cmd.isdigit():
-            idx = int(cmd) - 1
-            if 0 <= idx < len(MENU_OPTIONS):
-                cmd = MENU_OPTIONS[idx][1]
-            else:
-                print("Nieprawidłowy numer.")
-                continue
+        cmd = answer
         args = cmd.split()
         if args[0] == "exit" or args[0] == "quit": 
             print("Wyjście z trybu interaktywnego.")

@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import os
+import shutil
 
 # --- AUTO ENV & DEPENDENCY SETUP ---
 REQUIRED_PACKAGES = ["requests", "bs4", "python-dotenv"]
@@ -63,7 +64,11 @@ def get_default_model():
     return env.get("OLLAMA_MODEL", "")
 
 def set_default_model(model_name):
-    env_path = Path(__file__).parent / ".env"
+    env_path = Path(__file__).parent / ".." / ".env"
+    example_env_path = Path(__file__).parent / ".." / "env.example"
+    # Jeśli .env nie istnieje, kopiuj z env.example
+    if not env_path.exists() and example_env_path.exists():
+        shutil.copy(str(example_env_path), str(env_path))
     lines = []
     found = False
     if env_path.exists():
