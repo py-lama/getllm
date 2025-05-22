@@ -1,6 +1,6 @@
 # Makefile for PyLLM
 
-.PHONY: all setup clean test lint format run help venv
+.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean
 
 # Default values
 PORT ?= 8001
@@ -50,6 +50,27 @@ run-port: setup
 	@echo "Running PyLLM API server on port $(PORT)..."
 	@. venv/bin/activate && uvicorn pyllm.api:app --host $(HOST) --port $(PORT)
 
+# Docker testing targets
+docker-build:
+	@echo "Building Docker test images..."
+	@./run_docker_tests.sh --build
+
+docker-test: docker-build
+	@echo "Running tests in Docker..."
+	@./run_docker_tests.sh --run-tests
+
+docker-interactive: docker-build
+	@echo "Starting interactive Docker test environment..."
+	@./run_docker_tests.sh --interactive
+
+docker-mock: docker-build
+	@echo "Starting PyLLM mock service in Docker..."
+	@./run_docker_tests.sh --mock-service
+
+docker-clean:
+	@echo "Cleaning Docker test environment..."
+	@./run_docker_tests.sh --clean
+
 # Help
 help:
 	@echo "PyLLM Makefile"
@@ -62,4 +83,9 @@ help:
 	@echo "  format    - Format the code with black"
 	@echo "  run       - Run the API server"
 	@echo "  run-port PORT=8001 - Run the API server on a custom port"
+	@echo "  docker-build      - Build Docker test images"
+	@echo "  docker-test       - Run tests in Docker"
+	@echo "  docker-interactive - Start interactive Docker test environment"
+	@echo "  docker-mock       - Start PyLLM mock service in Docker"
+	@echo "  docker-clean      - Clean Docker test environment"
 	@echo "  help      - Show this help message"

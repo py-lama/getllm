@@ -1,0 +1,37 @@
+version: '3'
+
+services:
+  pyllm-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./tests:/app/tests
+      - ./test-reports:/app/test-reports
+    environment:
+      - PORT=8002
+      - HOST=0.0.0.0
+      - DEBUG=True
+    command: |
+      bash -c "python -m pytest tests/ -v --junitxml=/app/test-reports/test-results.xml"
+
+  pyllm-mock:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./tests:/app/tests
+      - ./test-reports:/app/test-reports
+    environment:
+      - PORT=8002
+      - HOST=0.0.0.0
+      - DEBUG=True
+    command: |
+      bash -c "python -m pyllm.app --port 8002 --host 0.0.0.0"
+
+volumes:
+  test-reports:
