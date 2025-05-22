@@ -49,6 +49,21 @@ User
 
 ---
 
+## Installation
+
+```bash
+# Create a virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install the package in development mode
+pip install -e .  # This is important! Always install in development mode before starting
+```
+
+> **IMPORTANT**: Always run `pip install -e .` before starting the project to ensure all dependencies are properly installed and the package is available in development mode.
+
+---
+
 ## Using the Makefile
 
 PyLLM includes a Makefile to simplify common development tasks:

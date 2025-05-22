@@ -200,6 +200,85 @@ def update_models_from_ollama():
     except Exception as e:
         print(f"Error updating from ollama.com: {e}")
 
+
+class ModelManager:
+    """
+    Class for managing LLM models in the PyLLM system.
+    Provides methods for listing, installing, and using models.
+    """
+    
+    def __init__(self):
+        self.default_model = get_default_model() or "llama3"
+        self.models = self.get_available_models()
+    
+    def get_available_models(self):
+        """
+        Get a list of available models from the models.json file or default list.
+        """
+        return get_models()
+    
+    def list_models(self):
+        """
+        Return a list of available models.
+        """
+        return self.models
+    
+    def get_model_info(self, model_name):
+        """
+        Get information about a specific model.
+        """
+        for model in self.models:
+            if model.get("name") == model_name:
+                return model
+        return None
+    
+    def install_model(self, model_name):
+        """
+        Install a model using Ollama.
+        """
+        return install_model(model_name)
+    
+    def list_installed_models(self):
+        """
+        List models that are currently installed.
+        """
+        try:
+            output = subprocess.check_output(["ollama", "list"]).decode()
+            models = []
+            for line in output.strip().split("\n")[1:]:
+                parts = line.split()
+                if parts:
+                    models.append({
+                        "name": parts[0],
+                        "size": parts[1] if len(parts) > 1 else "Unknown"
+                    })
+            return models
+        except Exception as e:
+            print(f"Error listing installed models: {e}")
+            return []
+    
+    def set_default_model(self, model_name):
+        """
+        Set the default model to use.
+        """
+        set_default_model(model_name)
+        self.default_model = model_name
+        return True
+    
+    def get_default_model_name(self):
+        """
+        Get the name of the current default model.
+        """
+        return self.default_model
+    
+    def update_models_from_remote(self):
+        """
+        Update the models list from the Ollama library.
+        """
+        update_models_from_ollama()
+        self.models = self.get_available_models()
+        return True
+
 if __name__ == "__main__":
     default_model = get_default_model()
     print("Available models:")
