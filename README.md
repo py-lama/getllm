@@ -2,6 +2,15 @@
 
 pyllm is a CLI tool for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. Both standard CLI and interactive shell modes are available.
 
+## Centralized Environment Integration
+
+PyLLM now integrates with the centralized environment system managed by LogLama. This means:
+
+- Environment variables are loaded from the central `.env` file in the `pylama` directory
+- Model configurations are shared across all PyLama components
+- Dependencies are managed by LogLama
+- Services can be started in the correct order using LogLama CLI
+
 ---
 
 ## General Diagram (Mermaid)
@@ -10,9 +19,10 @@ graph TD
     A[User] -->|CLI/Interactive| B[pyllm/cli.py]
     B --> C[models.py]
     B --> D[interactive_cli.py]
-    C --> E[.env / env.example]
+    C --> E[LogLama Central .env]
     C --> F[Ollama API]
     D --> B
+    G[LogLama] --> E
 ```
 
 ---
@@ -32,7 +42,8 @@ User
 +-----------------+
     |
 +-----------------+
-| .env/.example   |
+| LogLama Central |
+|    .env File    |
 +-----------------+
     |
 +-----------------+
