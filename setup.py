@@ -4,7 +4,7 @@ setup(
     name="pyllm",
     version="0.1.0",
     description="A package for managing LLM models with Ollama integration",
-    author="PyLama Team",
+    author="Tom Sapletta",
     license="Apache-2.0",
     packages=find_packages(),
     install_requires=[
