@@ -1,15 +1,18 @@
 # pyllm
 
-pyllm is a CLI tool for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. Both standard CLI and interactive shell modes are available.
+pyllm is a CLI tool for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. Both standard CLI and interactive shell modes are available. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
 
-## Centralized Environment Integration
+## LogLama Integration
 
-PyLLM now integrates with the centralized environment system managed by LogLama. This means:
+PyLLM integrates with LogLama as the primary service in the PyLama ecosystem. This integration provides:
 
-- Environment variables are loaded from the central `.env` file in the `pylama` directory
-- Model configurations are shared across all PyLama components
-- Dependencies are managed by LogLama
-- Services can be started in the correct order using LogLama CLI
+- **Centralized Environment Management**: Environment variables are loaded from the central `.env` file in the `pylama` directory
+- **Shared Configuration**: Model configurations are shared across all PyLama components
+- **Dependency Management**: Dependencies are validated and installed by LogLama
+- **Service Orchestration**: Services are started in the correct order using LogLama CLI
+- **Centralized Logging**: All PyLLM operations are logged to the central LogLama system
+- **Structured Logging**: Logs include component context for better filtering and analysis
+- **Health Monitoring**: LogLama monitors PyLLM service health and availability
 
 ---
 

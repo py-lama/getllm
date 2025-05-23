@@ -1,3 +1,5 @@
+.db
+.pid
 .env
 example.png
 fixed_script.py
