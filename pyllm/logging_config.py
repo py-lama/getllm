@@ -28,7 +28,8 @@ else:
 # Import PyLogs components
 try:
     from loglama.config.env_loader import load_env, get_env
-    from loglama.utils import configure_logging, LogContext, capture_context
+    from loglama.utils import configure_logging
+    from loglama.utils.context import LogContext, capture_context
     from loglama.formatters import ColoredFormatter, JSONFormatter
     from loglama.handlers import SQLiteHandler, EnhancedRotatingFileHandler
     LOGLAMA_AVAILABLE = True
