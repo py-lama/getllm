@@ -1,6 +1,16 @@
 # pyllm
 
-pyllm is a CLI tool for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. Both standard CLI and interactive shell modes are available. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
+pyllm is a Python package for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
+
+## Ollama Integration
+
+PyLLM provides comprehensive integration with Ollama for managing and using LLM models:
+
+- **Model Management**: Install, list, and select models
+- **Automatic Model Installation**: Automatically install models when they are not found
+- **Fallback Mechanisms**: Use fallback models when the requested model is not available
+- **Environment Configuration**: Configure Ollama through environment variables
+- **Special Model Handling**: Special installation process for SpeakLeash Bielik models
 
 ## LogLama Integration
 
@@ -216,9 +226,16 @@ install_model("deepseek-coder:6.7b")
 
 ## Environment Variables
 
-The package uses the following environment variables:
+The package uses the following environment variables for Ollama integration:
 
-- `OLLAMA_MODEL`: The default model to use with Ollama
+- `OLLAMA_PATH`: Path to the Ollama executable (default: 'ollama')
+- `OLLAMA_MODEL`: Default model to use (default: 'codellama:7b')
+- `OLLAMA_FALLBACK_MODELS`: Comma-separated list of fallback models (default: 'codellama:7b,phi3:latest,tinyllama:latest')
+- `OLLAMA_AUTO_SELECT_MODEL`: Whether to automatically select an available model if the requested model is not found (default: 'true')
+- `OLLAMA_AUTO_INSTALL_MODEL`: Whether to automatically install a model when it's not found (default: 'true')
+- `OLLAMA_TIMEOUT`: API timeout in seconds (default: '30')
+
+These variables can be set in a .env file in the project root directory or in the system environment.
 
 ## License
 This project is licensed under the Apache 2.0 License (see LICENSE file).

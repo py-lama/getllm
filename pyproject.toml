@@ -1,15 +1,22 @@
 [tool.poetry]
 name = "pyllm"
-version = "0.1.0"
+version = "0.1.3"
 description = "Python LLM operations service for the DevLama ecosystem"
 authors = ["Tom Sapletta <info@softreck.dev>"]
 license = "Apache-2.0"
 packages = [{include = "pyllm"}]
+readme = "README.md"
+repository = "https://github.com/tom-sapletta-com/py-lama"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
+requests = "^2.31.0"
+bs4 = "^0.0.1"
+beautifulsoup4 = "^4.12.2"
+python-dotenv = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]
