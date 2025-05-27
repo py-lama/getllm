@@ -1,5 +1,8 @@
-.db
+logs
+.log
 .pid
+.db
+.sqlite
 .env
 example.png
 fixed_script.py
