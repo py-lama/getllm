@@ -1,6 +1,6 @@
 # Makefile for PyLLM
 
-.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish
+.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish test-package update-version publish-test
 
 # Default values
 PORT ?= 8001
@@ -72,26 +72,31 @@ docker-clean:
 	@echo "Cleaning Docker test environment..."
 	@./run_docker_tests.sh --clean
 
+
 # Build package
 build: setup
-	@echo "Building PyLLM package..."
+	@echo "Building package..."
 	@. venv/bin/activate && rm -rf dist/* && python setup.py sdist bdist_wheel
 
+# Test package
+test-package: setup
+	@echo "Testing package..."
+	@. venv/bin/activate && pytest
+
+# Update version
+update-version:
+	@echo "Updating package version..."
+	@python ../scripts/update_version.py
+
 # Publish package to PyPI
-publish: build
-	@echo "Publishing PyLLM package to PyPI..."
-	@echo "Note: You need to have a .pypirc file set up or provide a token."
+publish: test-package update-version build
+	@echo "Publishing package to PyPI..."
 	@. venv/bin/activate && twine check dist/* && twine upload dist/*
 
-# Publish package to PyPI with token
-publish-token: build
-	@echo "Publishing PyLLM package to PyPI using token..."
-	@echo "Enter your PyPI token when prompted"
-	@. venv/bin/activate && twine check dist/* && twine upload --non-interactive dist/*
-
 # Publish package to TestPyPI
-publish-test: build
-	@echo "Publishing PyLLM package to TestPyPI..."
+publish-test: test-package update-version build
+	@echo "Publishing package to TestPyPI..."
+	@. venv/bin/activate && twine check dist/* && twine upload --repository testpypi dist/*
 	@echo "Note: You need to have a .pypirc file set up or provide a token."
 	@. venv/bin/activate && twine check dist/* && twine upload --repository testpypi dist/*
 
