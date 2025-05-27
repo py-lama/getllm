@@ -205,6 +205,8 @@ pip install pyllm
 
 ## Usage
 
+### Basic Model Management
+
 ```python
 from pyllm import get_models, get_default_model, set_default_model, install_model
 
@@ -222,6 +224,33 @@ set_default_model("codellama:7b")
 
 # Install a model
 install_model("deepseek-coder:6.7b")
+```
+
+### Direct Ollama Integration
+
+```python
+from pyllm import OllamaIntegration, get_ollama_integration, start_ollama_server
+
+# Start the Ollama server if it's not already running
+ollama = start_ollama_server()
+
+# Or create an OllamaIntegration instance with a specific model
+ollama = get_ollama_integration(model="codellama:7b")
+
+# Check if the model is available
+if ollama.check_model_availability():
+    print(f"Model {ollama.model} is available")
+else:
+    print(f"Model {ollama.model} is not available")
+    
+    # Install the model
+    if ollama.install_model(ollama.model):
+        print(f"Successfully installed {ollama.model}")
+    
+# List installed models
+installed_models = ollama.list_installed_models()
+for model in installed_models:
+    print(f"Installed model: {model['name']}")
 ```
 
 ## Environment Variables

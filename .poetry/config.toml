@@ -1,0 +1,7 @@
+[virtualenvs]
+in-project = true
+path = ".venv"
+create = true
+
+[installer]
+allow-external-executables = true
