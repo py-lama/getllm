@@ -16,7 +16,12 @@ from pyllm.pyllm.models import (
     list_installed_models,
     update_models_from_ollama
 )
-from pyllm.pyllm.ollama_integration import get_ollama_integration
+from pyllm.pyllm.ollama_integration import (
+    get_ollama_integration,
+    start_ollama_server,
+    install_ollama_model,
+    list_ollama_models,
+)
 
 __all__ = [
     'get_models',
@@ -26,4 +31,7 @@ __all__ = [
     'list_installed_models',
     'update_models_from_ollama',
     'get_ollama_integration',
+    'start_ollama_server',
+    'install_ollama_model',
+    'list_ollama_models',
 ]
