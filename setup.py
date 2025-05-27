@@ -1,9 +1,16 @@
 from setuptools import setup, find_packages
+import os
+
+# Read the contents of README.md file
+with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name="pyllm",
     version="0.1.3",
     description="Python LLM operations service for the DevLama ecosystem",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author="Tom Sapletta",
     author_email="info@softreck.dev",
     license="Apache-2.0",

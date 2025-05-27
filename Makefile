@@ -1,6 +1,6 @@
 # Makefile for PyLLM
 
-.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean
+.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish
 
 # Default values
 PORT ?= 8001
@@ -17,6 +17,7 @@ venv:
 setup: venv
 	@echo "Setting up PyLLM..."
 	@. venv/bin/activate && pip install -e .
+	@. venv/bin/activate && pip install setuptools wheel twine build
 
 # Clean project
 clean:
@@ -71,6 +72,45 @@ docker-clean:
 	@echo "Cleaning Docker test environment..."
 	@./run_docker_tests.sh --clean
 
+# Build package
+build: setup
+	@echo "Building PyLLM package..."
+	@. venv/bin/activate && rm -rf dist/* && python setup.py sdist bdist_wheel
+
+# Publish package to PyPI
+publish: build
+	@echo "Publishing PyLLM package to PyPI..."
+	@echo "Note: You need to have a .pypirc file set up or provide a token."
+	@. venv/bin/activate && twine check dist/* && twine upload dist/*
+
+# Publish package to PyPI with token
+publish-token: build
+	@echo "Publishing PyLLM package to PyPI using token..."
+	@echo "Enter your PyPI token when prompted"
+	@. venv/bin/activate && twine check dist/* && twine upload --non-interactive dist/*
+
+# Publish package to TestPyPI
+publish-test: build
+	@echo "Publishing PyLLM package to TestPyPI..."
+	@echo "Note: You need to have a .pypirc file set up or provide a token."
+	@. venv/bin/activate && twine check dist/* && twine upload --repository testpypi dist/*
+
+# Publish package to TestPyPI with token
+publish-test-token: build
+	@echo "Publishing PyLLM package to TestPyPI using token..."
+	@echo "Enter your TestPyPI token when prompted"
+	@. venv/bin/activate && twine check dist/* && twine upload --non-interactive --repository testpypi dist/*
+
+# Publish using the publish script
+publish-script: build
+	@echo "Publishing PyLLM package using the publish script..."
+	@. venv/bin/activate && python scripts/publish.py
+
+# Publish to TestPyPI using the publish script
+publish-script-test: build
+	@echo "Publishing PyLLM package to TestPyPI using the publish script..."
+	@. venv/bin/activate && python scripts/publish.py --test
+
 # Help
 help:
 	@echo "PyLLM Makefile"
@@ -83,6 +123,13 @@ help:
 	@echo "  format    - Format the code with black"
 	@echo "  run       - Run the API server"
 	@echo "  run-port PORT=8001 - Run the API server on a custom port"
+	@echo "  build     - Build the package"
+	@echo "  publish   - Publish the package to PyPI (requires .pypirc)"
+	@echo "  publish-token - Publish the package to PyPI using a token"
+	@echo "  publish-test - Publish the package to TestPyPI (requires .pypirc)"
+	@echo "  publish-test-token - Publish the package to TestPyPI using a token"
+	@echo "  publish-script - Publish using the publish script"
+	@echo "  publish-script-test - Publish to TestPyPI using the publish script"
 	@echo "  docker-build      - Build Docker test images"
 	@echo "  docker-test       - Run tests in Docker"
 	@echo "  docker-interactive - Start interactive Docker test environment"
