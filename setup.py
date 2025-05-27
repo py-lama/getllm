@@ -7,7 +7,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8'
 
 setup(
     name="pyllm",
-    version="0.1.7",
+    version="0.1.8",
     description="Python LLM operations service for the DevLama ecosystem",
     long_description=long_description,
     long_description_content_type="text/markdown",
