@@ -9,14 +9,16 @@ It handles model management, automatic installation, and fallback mechanisms.
 
 import os
 import sys
-import platform
-import subprocess
-import logging
-import requests
 import time
 import json
-import re
+import shutil
+import logging
+import platform
+import subprocess
+from threading import Thread
 import threading
+import requests
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 
@@ -487,8 +489,49 @@ print("The Ollama API is available at http://localhost:11434")
 print("
 To stop the sandbox later, run:
 python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-sandbox')"
-")
 """)
+            
+            # Create a custom model in Ollama
+            print(f"Creating Ollama model: {model_id}")
+            result = subprocess.run(
+                [self.ollama_path, "create", model_id, "--from", model_file_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False
+            )
+            
+            if result.returncode != 0:
+                print(f"Failed to create model: {model_id}")
+                print(result.stderr)
+                
+                # Check if the error is due to disk space
+                if "no space left on device" in result.stderr.lower():
+                    print("\nError: Not enough disk space to install the model.")
+                    try:
+                        import questionary
+                        use_mock = questionary.confirm(
+                            "Would you like to continue in mock mode instead?",
+                            default=True
+                        ).ask()
+                        
+                        if use_mock:
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
+                    except ImportError:
+                        # If questionary is not available, ask with input
+                        use_mock = input("Would you like to continue in mock mode instead? (Y/n): ").lower()
+                        if not use_mock.startswith('n'):
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
+                return False
+            
+            print("\n✅ Ollama is now running in bexy sandbox!")
+            print("The Ollama API is available at http://localhost:11434")
             
             # Run the sandbox script
             print("Starting Ollama in bexy sandbox...")
@@ -679,6 +722,81 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
             logger.warning(f"Could not check model availability: {e}")
             return False  # Assume model is not available if we can't check
 
+    def _check_disk_space(self, required_space_gb=None, model_name=None):
+        """
+        Check if there is enough disk space available for model installation.
+        
+        Args:
+            required_space_gb: Required space in GB, if known
+            model_name: Name of the model to check space for
+            
+        Returns:
+            Tuple of (bool, float, float): (has_enough_space, available_gb, required_gb)
+        """
+        try:
+            # Default model size estimates based on model name patterns
+            model_size_estimates = {
+                'bielik': {
+                    '1.5b': 2.0,  # 1.5B model needs ~2GB
+                    '3b': 3.5,    # 3B model needs ~3.5GB
+                    '7b': 7.0,    # 7B model needs ~7GB
+                    '11b': 12.0,  # 11B model needs ~12GB
+                },
+                'llama': {
+                    '7b': 7.0,    # 7B model needs ~7GB
+                    '13b': 14.0,  # 13B model needs ~14GB
+                },
+                'mistral': {
+                    '7b': 7.0,    # 7B model needs ~7GB
+                },
+                'phi': {
+                    '2': 2.5,     # Phi-2 needs ~2.5GB
+                    '3': 3.5,     # Phi-3 needs ~3.5GB
+                },
+                'tinyllama': {
+                    '1.1b': 1.5,  # TinyLlama needs ~1.5GB
+                }
+            }
+            
+            # If required space is not provided, estimate based on model name
+            if required_space_gb is None and model_name is not None:
+                model_name_lower = model_name.lower()
+                required_space_gb = 5.0  # Default estimate if we can't determine
+                
+                # Try to estimate based on model name patterns
+                for model_family, sizes in model_size_estimates.items():
+                    if model_family in model_name_lower:
+                        for size_key, size_gb in sizes.items():
+                            if size_key in model_name_lower:
+                                required_space_gb = size_gb
+                                # Add extra buffer for temporary files during installation
+                                required_space_gb *= 1.5  # Add 50% buffer
+                                break
+            
+            # If still no required space specified, use a conservative default
+            if required_space_gb is None:
+                required_space_gb = 10.0  # Conservative default: 10GB
+            
+            # Get available disk space in the Ollama models directory
+            ollama_dir = os.path.expanduser('~/.ollama')
+            if not os.path.exists(ollama_dir):
+                # If Ollama directory doesn't exist yet, check the home directory
+                ollama_dir = os.path.expanduser('~')
+                
+            # Get disk usage statistics
+            disk_usage = shutil.disk_usage(ollama_dir)
+            available_gb = disk_usage.free / (1024 ** 3)  # Convert bytes to GB
+            
+            # Check if there's enough space
+            has_enough_space = available_gb >= required_space_gb
+            
+            return has_enough_space, available_gb, required_space_gb
+            
+        except Exception as e:
+            logger.warning(f"Could not check disk space: {e}")
+            # If we can't check, assume there's enough space to avoid blocking installation
+            return True, 0, 0
+    
     def install_model(self, model_name: str) -> bool:
         """
         Install a model using Ollama's pull command.
@@ -701,23 +819,64 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
             print("  getllm --mock")
             return False
             
-        # Check if Ollama server is running
-        if not self.start_ollama():
-            logger.error("Cannot install model: Failed to start Ollama server")
-            return False
+        # Check disk space before attempting to download large models
+        has_enough_space, available_gb, required_gb = self._check_disk_space(model_name=model_name)
+        if not has_enough_space:
+            logger.warning(f"Not enough disk space to install {model_name}. "
+                         f"Available: {available_gb:.2f} GB, Required: {required_gb:.2f} GB")
+            print(f"\n⚠️ WARNING: Not enough disk space to install {model_name}"
+                  f"\nAvailable: {available_gb:.2f} GB, Required: {required_gb:.2f} GB")
+            
+            # Ask user if they want to continue anyway or use mock mode
+            try:
+                import questionary
+                continue_anyway = questionary.confirm(
+                    "Do you want to attempt installation anyway? (Not recommended)",
+                    default=False
+                ).ask()
+                
+                if not continue_anyway:
+                    use_mock = questionary.confirm(
+                        "Would you like to continue in mock mode instead?",
+                        default=True
+                    ).ask()
+                    
+                    if use_mock:
+                        print("\nContinuing in mock mode (no model download required)...")
+                        # Set environment variable for mock mode
+                        os.environ['GETLLM_MOCK_MODE'] = 'True'
+                        return True
+                    return False
+            except ImportError:
+                # If questionary is not available, ask with input
+                continue_anyway = input("Do you want to attempt installation anyway? (y/N): ").lower().startswith('y')
+                if not continue_anyway:
+                    use_mock = input("Would you like to continue in mock mode instead? (Y/n): ").lower()
+                    if not use_mock.startswith('n'):
+                        print("\nContinuing in mock mode (no model download required)...")
+                        # Set environment variable for mock mode
+                        os.environ['GETLLM_MOCK_MODE'] = 'True'
+                        return True
+                    return False
         
-        # Check if it's a SpeakLeash model that needs special handling
+        # Check if this is a SpeakLeash model that needs special handling
         if model_name.lower().startswith('speakleash/bielik'):
             print(f"\nDetected SpeakLeash Bielik model: {model_name}")
             print("Starting special installation process...")
             return self._install_speakleash_model(model_name)
-        
+            
         # For regular models, use ollama pull
-        print(f"\nInstalling model: {model_name}")
-        spinner = ProgressSpinner(message=f"Pulling model {model_name}")
-        spinner.start()
-        
         try:
+            # Check if Ollama server is running
+            if not self.check_server_running():
+                if not self.start_ollama():
+                    logger.error("Failed to start Ollama server")
+                    return False
+                    
+            print(f"\nInstalling model: {model_name}")
+            spinner = ProgressSpinner(message=f"Pulling model {model_name}")
+            spinner.start()
+            
             # Run ollama pull command
             result = subprocess.run(
                 [self.ollama_path, "pull", model_name],
@@ -737,10 +896,35 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
             else:
                 print(f"Failed to install model: {model_name}")
                 print(f"Error: {result.stderr}")
+                
+                # Check if the error is due to disk space
+                if "no space left on device" in result.stderr.lower():
+                    print("\nError: Not enough disk space to install the model.")
+                    try:
+                        import questionary
+                        use_mock = questionary.confirm(
+                            "Would you like to continue in mock mode instead?",
+                            default=True
+                        ).ask()
+                        
+                        if use_mock:
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
+                    except ImportError:
+                        # If questionary is not available, ask with input
+                        use_mock = input("Would you like to continue in mock mode instead? (Y/n): ").lower()
+                        if not use_mock.startswith('n'):
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
                 return False
                 
         except Exception as e:
-            spinner.stop()
+            if 'spinner' in locals():
+                spinner.stop()
             print(f"Error installing model: {e}")
             return False
     
@@ -786,6 +970,47 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
         
         # Extract the model version from the name
         model_parts = model_name.split('/')
+        
+        # Check if we have enough disk space for the download and installation
+        # We need to be more careful with SpeakLeash models as they can be very large
+        has_enough_space, available_gb, required_gb = self._check_disk_space(model_name=model_name)
+        if not has_enough_space:
+            logger.warning(f"Not enough disk space to install {model_name}. "
+                         f"Available: {available_gb:.2f} GB, Required: {required_gb:.2f} GB")
+            print(f"\n⚠️ WARNING: Not enough disk space to install {model_name}"
+                  f"\nAvailable: {available_gb:.2f} GB, Required: {required_gb:.2f} GB")
+            
+            # Ask user if they want to continue anyway or use mock mode
+            try:
+                import questionary
+                continue_anyway = questionary.confirm(
+                    "Do you want to attempt installation anyway? (Not recommended)",
+                    default=False
+                ).ask()
+                
+                if not continue_anyway:
+                    use_mock = questionary.confirm(
+                        "Would you like to continue in mock mode instead?",
+                        default=True
+                    ).ask()
+                    
+                    if use_mock:
+                        print("\nContinuing in mock mode (no model download required)...")
+                        # Set environment variable for mock mode
+                        os.environ['GETLLM_MOCK_MODE'] = 'True'
+                        return True
+                    return False
+            except ImportError:
+                # If questionary is not available, ask with input
+                continue_anyway = input("Do you want to attempt installation anyway? (y/N): ").lower().startswith('y')
+                if not continue_anyway:
+                    use_mock = input("Would you like to continue in mock mode instead? (Y/n): ").lower()
+                    if not use_mock.startswith('n'):
+                        print("\nContinuing in mock mode (no model download required)...")
+                        # Set environment variable for mock mode
+                        os.environ['GETLLM_MOCK_MODE'] = 'True'
+                        return True
+                    return False
         if len(model_parts) != 2:
             print(f"Invalid model name format: {model_name}")
             return False
@@ -907,7 +1132,31 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
                 return True
             else:
                 print(f"Failed to create model: {custom_model_name}")
-                print(f"Error: {result.stderr}")
+                print(result.stderr)
+                
+                # Check if the error is due to disk space
+                if "no space left on device" in result.stderr.lower():
+                    print("\nError: Not enough disk space to install the model.")
+                    try:
+                        import questionary
+                        use_mock = questionary.confirm(
+                            "Would you like to continue in mock mode instead?",
+                            default=True
+                        ).ask()
+                        
+                        if use_mock:
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
+                    except ImportError:
+                        # If questionary is not available, ask with input
+                        use_mock = input("Would you like to continue in mock mode instead? (Y/n): ").lower()
+                        if not use_mock.startswith('n'):
+                            print("\nContinuing in mock mode (no model download required)...")
+                            # Set environment variable for mock mode
+                            os.environ['GETLLM_MOCK_MODE'] = 'True'
+                            return True
                 return False
                 
         except Exception as e:
