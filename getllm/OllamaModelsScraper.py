@@ -236,46 +236,63 @@ class OllamaModelsScraper:
             self.driver.get(url)
             
             # Wait for the page to load
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.TAG_NAME, 'body'))
+            )
+            
+            # Wait for dynamic content to load
+            time.sleep(3)
+            
+            # Take a screenshot for debugging
             try:
-                # Try multiple possible selectors for model cards
-                selectors = [
-                    'a[href^="/library/"]',
-                    '.model-card',
-                    'div[data-testid="model-card"]',
-                    'div.border.rounded.p-4',
-                    'div.grid.grid-cols-1.gap-4 > div',
-                    'div.space-y-4 > div'
-                ]
-                
-                model_cards = []
-                for selector in selectors:
-                    try:
-                        WebDriverWait(self.driver, 10).until(
-                            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                        )
-                        model_cards = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                        if model_cards:
-                            print(f"🔍 Found {len(model_cards)} model cards with selector: {selector}")
-                            break
-                    except:
-                        continue
-                
-                if not model_cards:
-                    # If no cards found with specific selectors, try a more generic approach
-                    print("⚠️ No model cards found with specific selectors, trying generic approach...")
-                    model_cards = self.driver.find_elements(By.CSS_SELECTOR, 'a, div')
-                    model_cards = [card for card in model_cards if card.text.strip() and len(card.text) > 10]
-                    print(f"🔍 Found {len(model_cards)} potential model cards with generic selector")
-                
-                # Wait a bit more for any dynamic content to load
-                time.sleep(2)
-                
+                screenshot_path = f"page_{page}_screenshot.png"
+                self.driver.save_screenshot(screenshot_path)
+                print(f"📸 Saved screenshot to {screenshot_path}")
             except Exception as e:
-                print(f"⚠️ Error waiting for model cards: {str(e)[:200]}...")
-                # Try to proceed with whatever elements we can find
-                model_cards = self.driver.find_elements(By.CSS_SELECTOR, 'a, div')
-                model_cards = [card for card in model_cards if card.text.strip() and len(card.text) > 10]
-                print(f"🔍 Found {len(model_cards)} potential model cards with fallback selector")
+                print(f"⚠️ Could not take screenshot: {str(e)}")
+            
+            # Get the page source for debugging
+            try:
+                page_source = self.driver.page_source
+                with open(f"page_{page}_source.html", 'w', encoding='utf-8') as f:
+                    f.write(page_source)
+                print(f"📝 Saved page source to page_{page}_source.html")
+            except Exception as e:
+                print(f"⚠️ Could not save page source: {str(e)}")
+            
+            # Try to find model cards using multiple strategies
+            model_cards = []
+            
+            # Strategy 1: Look for model cards with specific class names
+            selectors = [
+                'div[class*="model"][class*="card"]',  # Matches class containing both 'model' and 'card'
+                'a[href^="/library/"]',
+                'div[class*="grid"][class*="gap"] > div',  # Grid layout items
+                'div[class*="space-y"] > div',  # Items with vertical spacing
+                'div[class*="p-"][class*="border"]',  # Items with padding and border
+                'div[class*="rounded"]'  # Items with rounded corners
+            ]
+            
+            for selector in selectors:
+                try:
+                    cards = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    if len(cards) > len(model_cards):
+                        model_cards = cards
+                        print(f"🔍 Found {len(cards)} potential model cards with selector: {selector}")
+                        if len(cards) >= 10:  # If we found a reasonable number of cards, use this selector
+                            break
+                except Exception as e:
+                    continue
+            
+            # If we didn't find any cards, try a more generic approach
+            if not model_cards:
+                print("⚠️ No model cards found with specific selectors, trying generic approach...")
+                all_elements = self.driver.find_elements(By.XPATH, '//*')
+                model_cards = [el for el in all_elements 
+                             if el.tag_name in ['div', 'a'] 
+                             and len(el.text) > 50  # Reasonable minimum text length for a model card
+                             and len(el.find_elements(By.XPATH, './/*')) > 3]  # Has several child elements
+                print(f"🔍 Found {len(model_cards)} potential model cards with generic selector")
             
             # Apply limit if specified
             if limit and len(model_cards) > limit:
@@ -288,13 +305,17 @@ class OllamaModelsScraper:
             for i, card in enumerate(model_cards, 1):
                 try:
                     print(f"\n🔄 Processing card {i}/{len(model_cards)}")
+                    print(f"Card text preview: {card.text[:100]}..." if card.text else "No text content")
                     
                     # Scroll the card into view to ensure it's clickable
                     try:
-                        self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", card)
+                        self.driver.execute_script(
+                            "arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", 
+                            card
+                        )
                         time.sleep(0.5)  # Small delay for any animations
-                    except:
-                        pass
+                    except Exception as e:
+                        print(f"  ⚠️ Could not scroll to card: {str(e)}")
                     
                     # Extract model info
                     model_info = self.extract_model_info(card)
@@ -304,9 +325,16 @@ class OllamaModelsScraper:
                         print(f"✅ Added model: {model_info['name']}")
                     else:
                         print(f"⚠️ Skipped card {i} - no valid model info extracted")
+                        # Print card HTML for debugging
+                        try:
+                            print(f"Card HTML: {card.get_attribute('outerHTML')[:200]}...")
+                        except:
+                            print("Could not get card HTML")
                         
                 except Exception as e:
                     print(f"⚠️ Error processing model card {i}: {str(e)[:200]}...")
+                    import traceback
+                    traceback.print_exc()
                     continue
             
             print(f"\n✅ Successfully processed {len(models)} models from page {page}")

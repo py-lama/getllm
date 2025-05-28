@@ -30,15 +30,23 @@ class OllamaModelManager(BaseModelManager):
         self.cache_file = self.models_dir / "ollama_models.json"
         self.models_metadata_file = get_models_metadata_path()
     
-    def get_available_models(self) -> List[Dict]:
-        """Get available Ollama models."""
+    def get_available_models(self, limit: Optional[int] = None) -> List[Dict]:
+        """
+        Get available Ollama models.
+        
+        Args:
+            limit: Maximum number of models to return. If None, returns all available models.
+            
+        Returns:
+            List of model dictionaries with metadata.
+        """
         # First try to load from cache
         cached_models = self._load_cached_models()
         if cached_models:
-            return cached_models
+            return cached_models[:limit] if limit is not None else cached_models
         
         # Fall back to default models if cache is empty
-        return self.DEFAULT_MODELS
+        return self.DEFAULT_MODELS[:limit] if limit is not None else self.DEFAULT_MODELS
     
     def install_model(self, model_name: str) -> bool:
         """Install an Ollama model."""
