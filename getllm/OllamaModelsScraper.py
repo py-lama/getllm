@@ -125,52 +125,75 @@ class OllamaModelsScraper:
         if not soup:
             return []
 
+
         models = []
 
-        # Szukamy kontenerów z modelami
-        model_containers = (
-                soup.find_all('div', class_='model-card') or
-                soup.find_all('article') or
-                soup.find_all('div', class_='border') or
-                soup.find_all('a', href=lambda x: x and '/library/' in x)
-        )
-
-        for container in model_containers:
-            model_info = self.extract_model_info(container)
-            if model_info and model_info['name'] != "Unknown":
-                models.append(model_info)
-
+        # Nowa struktura strony Ollama
+        model_cards = soup.select('a[href^="/library/"]')
+        
+        for card in model_cards:
+            try:
+                # Pobieranie podstawowych informacji
+                name_elem = card.select_one('h3')
+                if not name_elem:
+                    continue
+                    
+                name = name_elem.get_text(strip=True)
+                url = urljoin(self.base_url, card['href'])
+                
+                # Pobieranie opisu
+                description_elem = card.select_one('p')
+                description = description_elem.get_text(strip=True) if description_elem else ""
+                
+                # Pobieranie liczby pobrań i innych metadanych
+                meta_elements = card.select('div.text-sm.text-gray-500')
+                pulls = "0"
+                size = "Unknown"
+                updated = "Unknown"
+                
+                for meta in meta_elements:
+                    text = meta.get_text(strip=True).lower()
+                    if 'pull' in text or 'download' in text:
+                        pulls = text
+                    elif 'gb' in text or 'mb' in text:
+                        size = text
+                    elif 'ago' in text or 'updated' in text:
+                        updated = text
+                
+                # Pobieranie tagów
+                tags = []
+                tag_elements = card.select('span.bg-gray-100, span.inline-flex')
+                for tag in tag_elements:
+                    tag_text = tag.get_text(strip=True)
+                    if tag_text and tag_text not in ['Ollama', 'Model', 'Library']:
+                        tags.append(tag_text)
+                
+                models.append({
+                    "name": name,
+                    "url": url,
+                    "pulls": pulls,
+                    "size": size,
+                    "updated": updated,
+                    "description": description,
+                    "tags": tags,
+                    "source": "ollama",
+                    "ollama_command": f"ollama pull {name}",
+                    "scraped_at": time.strftime("%Y-%m-%d %H:%M:%S")
+                })
+                
+            except Exception as e:
+                print(f"⚠️ Error processing model card: {e}")
+                continue
+                
         return models
 
     def search_models(self, query: str = "", category: str = "") -> List[Dict[str, Any]]:
         """Przeszukuje modele według zapytania i kategorii"""
         print(f"🔍 Searching for: query='{query}', category='{category}'")
 
-        params = {}
-        if query:
-            params['q'] = query
-        if category:
-            params['c'] = category
-
-        soup = self.get_page(self.search_url, params)
-        if not soup:
-            return []
-
-        models = []
-
-        # Szukamy wyników wyszukiwania
-        search_results = (
-                soup.find_all('div', class_='search-result') or
-                soup.find_all('article') or
-                soup.find_all('div', class_='model')
-        )
-
-        for result in search_results:
-            model_info = self.extract_model_info(result)
-            if model_info and model_info['name'] != "Unknown":
-                models.append(model_info)
-
-        return models
+        # Używamy tej samej metody co do scrapowania biblioteki,
+        # ponieważ strona wyszukiwania ma podobną strukturę
+        return self.scrape_library_page()
 
     def scrape_all_categories(self) -> List[Dict[str, Any]]:
         """Scrape'uje wszystkie kategorie modeli"""
