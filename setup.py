@@ -7,7 +7,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8'
 
 setup(
     name="getllm",
-    version="0.1.23",
+    version="0.1.24",
     description="Python LLM operations service for the DevLama ecosystem",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -20,7 +20,8 @@ setup(
         "bs4>=0.0.1,<0.0.2",
         "beautifulsoup4>=4.12.2,<5.0.0",
         "python-dotenv>=1.0.0,<2.0.0",
-        "dialogchain"
+        "dialogchain",
+        "questionary>=1.10.0,<2.0.0"
     ],
     entry_points={
         'console_scripts': [
