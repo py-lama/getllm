@@ -357,6 +357,42 @@ def install_model(model_name: str, model_source: str = 'ollama') -> bool:
     else:
         raise ValueError(f"Unsupported model source: {model_source}")
 
+
+def list_installed_models() -> List[Dict[str, Any]]:
+    """
+    List all installed models from all sources.
+    
+    Returns:
+        List of installed models with their metadata
+    """
+    installed_models = []
+    
+    # Get installed models from Ollama
+    try:
+        ollama_models = ollama_manager.list_installed_models()
+        installed_models.extend([{
+            'name': model.get('name', 'unknown'),
+            'source': 'ollama',
+            'size': model.get('size', 'unknown'),
+            'description': model.get('description', '')
+        } for model in ollama_models])
+    except Exception as e:
+        print(f"Error listing Ollama models: {e}")
+    
+    # Get installed models from Hugging Face
+    try:
+        hf_models = huggingface_manager.list_installed_models()
+        installed_models.extend([{
+            'name': model.get('name', 'unknown'),
+            'source': 'huggingface',
+            'size': model.get('size', 'unknown'),
+            'description': model.get('description', '')
+        } for model in hf_models])
+    except Exception as e:
+        print(f"Error listing Hugging Face models: {e}")
+    
+    return installed_models
+
 __all__ = [
     'ModelManager',
     'HuggingFaceModelManager',
@@ -366,6 +402,8 @@ __all__ = [
     'get_huggingface_models',
     'get_default_model',
     'set_default_model',
+    'install_model',
+    'list_installed_models',
     'get_hf_models_cache_path',
     'update_huggingface_models_cache',
     'update_models_from_ollama',
