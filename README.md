@@ -133,9 +133,14 @@ getllm --update-hf
 
 ## Known Issues
 
-- **Direct Code Generation**: The direct code generation functionality (e.g., `getllm "create a function"`) is currently being migrated from the `devlama` package. Use the interactive mode (`getllm -i`) for code generation in the meantime.
+- **Direct Code Generation**: The direct code generation functionality (e.g., `getllm "create a function"`) is currently experiencing timeout issues with the Ollama API. Use the interactive mode (`getllm -i`) for code generation in the meantime.
 
-- **Error Message**: If you try to use direct code generation, you might see an error like `AttributeError: 'OllamaIntegration' object has no attribute 'query_ollama'`. This will be fixed in an upcoming update.
+- **Timeout Errors**: When using direct code generation, you might encounter timeout errors like `ReadTimeoutError: HTTPConnectionPool(host='localhost', port=11434): Read timed out`. This indicates that the Ollama server is not responding in time, which could be due to:
+  - The model is too large for your system's resources
+  - The Ollama server is busy with other requests
+  - The prompt requires too much processing time
+
+- **Workaround**: For now, the recommended approach is to use the interactive mode (`getllm -i`), which provides a more stable interface for code generation and model management.
 
 ### Interactive Mode
 
