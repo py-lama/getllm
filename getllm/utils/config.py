@@ -3,9 +3,11 @@ Configuration utilities for the getllm application.
 """
 import os
 import json
+import platform
 from pathlib import Path
 from typing import Optional, Dict, Any
 import dotenv
+import appdirs
 
 
 def get_central_env_path() -> Path:
@@ -37,6 +39,22 @@ def get_central_env_path() -> Path:
     
     # If no central .env found, fall back to local .env
     return Path(__file__).parent.parent / ".env"
+
+
+def get_config_dir() -> Path:
+    """
+    Get the configuration directory for the application.
+    
+    Returns:
+        Path to the configuration directory.
+    """
+    # Use appdirs to get the appropriate config directory for the OS
+    config_dir = Path(appdirs.user_config_dir("getllm"))
+    
+    # Create the directory if it doesn't exist
+    config_dir.mkdir(parents=True, exist_ok=True)
+    
+    return config_dir
 
 
 def get_models_dir() -> Path:
@@ -162,3 +180,13 @@ def set_default_model(model_name: str) -> bool:
             return False
     
     return env_updated
+
+
+__all__ = [
+    'get_config_dir',
+    'get_models_dir',
+    'get_models_metadata_path',
+    'get_default_model',
+    'set_default_model',
+    'get_central_env_path'
+]

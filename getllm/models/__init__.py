@@ -4,14 +4,15 @@ This package contains model-related functionality for the getllm application.
 
 import os
 import json
+import datetime
 from pathlib import Path
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 
 from .base import ModelManager
 from .huggingface import HuggingFaceModelManager
 from .ollama import OllamaModelManager
 from .metadata import ModelMetadataManager
-from ..utils.config import get_models_dir, get_models_metadata_path
+from ..utils.config import get_models_dir, get_models_metadata_path, get_config_dir
 
 # Initialize model managers
 huggingface_manager = HuggingFaceModelManager()
@@ -289,19 +290,68 @@ def update_models_from_huggingface(query: str = None, limit: int = 20) -> bool:
         print(f"Error updating models from Hugging Face: {e}")
         return False
 
+def get_default_model() -> Optional[Dict[str, Any]]:
+    """
+    Get the default model configuration.
+    
+    Returns:
+        Dictionary containing default model information or None if not set
+    """
+    config_dir = get_config_dir()
+    config_file = config_dir / 'default_model.json'
+    
+    if not config_file.exists():
+        return None
+        
+    try:
+        with open(config_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+def set_default_model(model_name: str, model_source: str = 'ollama') -> bool:
+    """
+    Set the default model.
+    
+    Args:
+        model_name: Name of the model to set as default
+        model_source: Source of the model ('ollama' or 'huggingface')
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    config_dir = get_config_dir()
+    config_dir.mkdir(parents=True, exist_ok=True)
+    config_file = config_dir / 'default_model.json'
+    
+    try:
+        default_model = {
+            'name': model_name,
+            'source': model_source,
+            'timestamp': str(datetime.datetime.now().isoformat())
+        }
+        
+        with open(config_file, 'w', encoding='utf-8') as f:
+            json.dump(default_model, f, indent=2)
+        return True
+    except (IOError, TypeError):
+        return False
+
 __all__ = [
     'ModelManager',
     'HuggingFaceModelManager',
     'OllamaModelManager',
     'ModelMetadataManager',
     'get_models',
+    'get_huggingface_models',
+    'get_default_model',
+    'set_default_model',
     'get_hf_models_cache_path',
     'update_huggingface_models_cache',
     'update_models_from_ollama',
     'update_models_metadata',
     'DEFAULT_HF_MODELS',
     'search_huggingface_models',
-    'get_huggingface_models',
     'update_models_from_huggingface',
     'load_huggingface_models_from_cache',
     'load_ollama_models_from_cache'
