@@ -310,13 +310,8 @@ def interactive_shell(mock_mode=False):
             query = questionary.text("Enter search term for Hugging Face models:").ask()
             if query:
                 print(f"Searching for models matching '{query}' on Hugging Face...")
-                # First try to get models from the search function
+                # Get models from the search function (which now handles fallbacks internally)
                 models_list = search_huggingface_models(query)
-                
-                # If no models found but query contains 'biel', try to find Bielik models from DEFAULT_HF_MODELS
-                if not models_list and 'biel' in query.lower():
-                    print("Using hardcoded Bielik models list...")
-                    models_list = [m for m in DEFAULT_HF_MODELS if 'bielik' in m['id'].lower()]
                 
                 if not models_list:
                     print(f"No models found matching '{query}'.")
