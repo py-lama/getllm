@@ -290,12 +290,12 @@ def update_models_from_huggingface(query: str = None, limit: int = 20) -> bool:
         print(f"Error updating models from Hugging Face: {e}")
         return False
 
-def get_default_model() -> Optional[Dict[str, Any]]:
+def get_default_model() -> Optional[str]:
     """
-    Get the default model configuration.
+    Get the default model name.
     
     Returns:
-        Dictionary containing default model information or None if not set
+        The name of the default model or None if not set
     """
     config_dir = get_config_dir()
     config_file = config_dir / 'default_model.json'
@@ -305,7 +305,8 @@ def get_default_model() -> Optional[Dict[str, Any]]:
         
     try:
         with open(config_file, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            config = json.load(f)
+            return config.get('name') if isinstance(config, dict) else None
     except (json.JSONDecodeError, IOError):
         return None
 
