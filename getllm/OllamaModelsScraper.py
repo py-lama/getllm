@@ -28,11 +28,25 @@ class OllamaModelsScraper:
     def get_page(self, url: str, params: dict = None) -> BeautifulSoup:
         """Pobiera stronę i zwraca parsed HTML"""
         try:
+            print(f"🌐 Fetching URL: {url} with params: {params}")
             response = self.session.get(url, params=params, timeout=30)
             response.raise_for_status()
+            
+            # Save raw HTML for debugging
+            debug_filename = f"debug_{url.replace('https://', '').replace('/', '_')}.html"
+            with open(debug_filename, 'w', encoding='utf-8') as f:
+                f.write(response.text)
+            print(f"💾 Saved response to {debug_filename}")
+            
+            # Print first 500 chars of response for quick inspection
+            print("📄 Response preview:")
+            print(response.text[:500] + "...")
+            
             return BeautifulSoup(response.content, 'html.parser')
         except Exception as e:
             print(f"❌ Error fetching {url}: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
     def extract_model_info(self, model_element) -> Dict[str, Any]:
