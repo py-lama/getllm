@@ -169,6 +169,7 @@ class OllamaIntegration:
             options = [
                 {"name": "Install Ollama directly (recommended)", "value": "direct"},
                 {"name": "Install Ollama using Docker", "value": "docker"},
+                {"name": "Use bexy sandbox for testing", "value": "bexy"},
                 {"name": "Manual installation (I'll install it myself)", "value": "manual"},
                 {"name": "Continue in mock mode (no Ollama required)", "value": "mock"},
                 {"name": "Cancel", "value": "cancel"}
@@ -222,6 +223,9 @@ class OllamaIntegration:
             
             elif install_choice == "docker":
                 return self._install_ollama_docker()
+            
+            elif install_choice == "bexy":
+                return self._install_ollama_bexy()
             
             else:  # direct installation
                 return self._install_ollama_direct()
@@ -383,6 +387,137 @@ class OllamaIntegration:
         except Exception as e:
             logger.error(f"Error installing Ollama with Docker: {e}")
             print(f"\n❌ Error setting up Ollama with Docker: {e}")
+            print("Please install Ollama manually from https://ollama.com")
+            print("If you want to continue without Ollama, use the --mock flag.")
+            return False
+    
+    def _install_ollama_bexy(self) -> bool:
+        """Set up and run Ollama in a bexy sandbox environment for testing.
+        
+        Returns:
+            bool: True if bexy sandbox was set up successfully, False otherwise.
+        """
+        try:
+            print("\nSetting up bexy sandbox for Ollama testing...")
+            
+            # Check if bexy is available in the project
+            bexy_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "bexy")
+            
+            if not os.path.isdir(bexy_path):
+                print("❌ bexy package not found at expected location.")
+                print("Please make sure the bexy package is available at: {}".format(bexy_path))
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            print("✅ Found bexy package at: {}".format(bexy_path))
+            
+            # Create a virtual environment for bexy if it doesn't exist
+            bexy_venv_path = os.path.join(bexy_path, "venv")
+            if not os.path.isdir(bexy_venv_path):
+                print("Creating virtual environment for bexy...")
+                venv_cmd = subprocess.run(
+                    [sys.executable, "-m", "venv", bexy_venv_path],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                if venv_cmd.returncode != 0:
+                    print(f"❌ Failed to create virtual environment: {venv_cmd.stderr}")
+                    print("If you want to continue without Ollama, use the --mock flag.")
+                    return False
+                
+                print("✅ Created virtual environment for bexy")
+            else:
+                print("✅ Using existing bexy virtual environment")
+            
+            # Determine the pip executable path based on the OS
+            if os.name == "nt":  # Windows
+                pip_path = os.path.join(bexy_venv_path, "Scripts", "pip")
+            else:  # Unix/Linux/MacOS
+                pip_path = os.path.join(bexy_venv_path, "bin", "pip")
+            
+            # Install bexy package in development mode
+            print("Installing bexy package...")
+            install_cmd = subprocess.run(
+                [pip_path, "install", "-e", bexy_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                cwd=bexy_path
+            )
+            
+            if install_cmd.returncode != 0:
+                print(f"❌ Failed to install bexy package: {install_cmd.stderr}")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            print("✅ Installed bexy package")
+            
+            # Install Ollama in the bexy sandbox
+            print("Setting up Ollama in bexy sandbox...")
+            
+            # Determine the Python executable path based on the OS
+            if os.name == "nt":  # Windows
+                python_path = os.path.join(bexy_venv_path, "Scripts", "python")
+            else:  # Unix/Linux/MacOS
+                python_path = os.path.join(bexy_venv_path, "bin", "python")
+            
+            # Create a simple script to run Ollama in the bexy sandbox
+            sandbox_script = os.path.join(bexy_path, "run_ollama_sandbox.py")
+            
+            with open(sandbox_script, 'w') as f:
+                f.write("""
+# Script to run Ollama in a bexy sandbox
+from bexy import DockerSandbox
+
+# Create a Docker sandbox for Ollama
+sandbox = DockerSandbox(
+    image="ollama/ollama:latest",
+    ports={"11434": "11434"},
+    detach=True,
+    name="ollama-bexy-sandbox"
+)
+
+# Run the sandbox
+print("Starting Ollama in bexy sandbox...")
+result = sandbox.run("ollama serve")
+print("Ollama is now running in bexy sandbox!")
+print("The Ollama API is available at http://localhost:11434")
+print("
+To stop the sandbox later, run:
+python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-sandbox')"
+")
+""")
+            
+            # Run the sandbox script
+            print("Starting Ollama in bexy sandbox...")
+            run_cmd = subprocess.run(
+                [python_path, sandbox_script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                cwd=bexy_path
+            )
+            
+            if run_cmd.returncode != 0:
+                print(f"❌ Failed to start Ollama in bexy sandbox: {run_cmd.stderr}")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            print("\n✅ Ollama is now running in bexy sandbox!")
+            print("The Ollama API is available at http://localhost:11434")
+            
+            # Wait a moment for the server to fully start
+            print("Waiting for Ollama server to initialize...")
+            time.sleep(2)
+            
+            # Update the status
+            return self.check_server_running()
+                
+        except Exception as e:
+            logger.error(f"Error setting up bexy sandbox for Ollama: {e}")
+            print(f"\n❌ Error setting up bexy sandbox: {e}")
             print("Please install Ollama manually from https://ollama.com")
             print("If you want to continue without Ollama, use the --mock flag.")
             return False

@@ -404,7 +404,7 @@ def interactive_model_search(query=None, check_ollama=True):
         ]
         
         # Add a cancel option
-        choices.append(questionary.Choice(title="Cancel", value=None))
+        choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
         
         # Ask the user to select a model
         selected = questionary.select(
@@ -412,8 +412,8 @@ def interactive_model_search(query=None, check_ollama=True):
             choices=choices
         ).ask()
         
-        # If user selected Cancel (None), return early
-        if selected is None:
+        # If user selected Cancel, return early
+        if selected == "__CANCEL__":
             print("Selection cancelled.")
             return None
         
