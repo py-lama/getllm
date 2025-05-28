@@ -43,4 +43,4 @@ __all__ = [
     'list_ollama_models'
 ]
 
-__version__ = '0.1.26'
+__version__ = '0.1.33'

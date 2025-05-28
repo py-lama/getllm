@@ -1,6 +1,6 @@
 # Makefile for PyLLM
 
-.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish test-package update-version publish-test
+.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish test-package update-version publish-test build-and-publish
 
 # Default values
 PORT ?= 8001
@@ -54,30 +54,38 @@ run-port: setup
 # Docker testing targets
 docker-build:
 	@echo "Building Docker test images..."
-	@./run_docker_tests.sh --build
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml build
 
 docker-test: docker-build
 	@echo "Running tests in Docker..."
-	@./run_docker_tests.sh --run-tests
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml run getllm-test
+
+docker-test-cli: docker-build
+	@echo "Running CLI tests in Docker..."
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml run getllm-test cli
+
+docker-test-with-ollama: docker-build
+	@echo "Running tests with Ollama in Docker..."
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml run getllm-test-with-ollama
+
+docker-test-ansible: docker-build
+	@echo "Running Ansible tests in Docker..."
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml run ansible-test
 
 docker-interactive: docker-build
 	@echo "Starting interactive Docker test environment..."
-	@./run_docker_tests.sh --interactive
-
-docker-mock: docker-build
-	@echo "Starting PyLLM mock service in Docker..."
-	@./run_docker_tests.sh --mock-service
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml run --entrypoint /bin/bash getllm-test
 
 docker-clean:
 	@echo "Cleaning Docker test environment..."
-	@./run_docker_tests.sh --clean
+	@cd ../tests && docker-compose -f docker-compose.test-getllm.yml down -v
 
 
 # Build package
 build: setup
-	@echo "Building package..."
+	@echo "Building package using new build script..."
 	@. venv/bin/activate && pip install -e . && pip install wheel twine build
-	@. venv/bin/activate && rm -rf dist/* && python setup.py sdist bdist_wheel
+	@. venv/bin/activate && python build.py
 
 # Update version
 update-version:
@@ -85,9 +93,14 @@ update-version:
 	@python ../scripts/update_version.py
 
 # Publish package to PyPI
-publish: build update-version
-	@echo "Publishing package to PyPI..."
-	@. venv/bin/activate && twine check dist/* && twine upload dist/*
+publish: setup
+	@echo "Building and publishing package to PyPI automatically..."
+	@. venv/bin/activate && python build_and_publish.py
+
+# Build and publish in one step (non-interactive)
+build-and-publish: setup
+	@echo "Building and publishing package to PyPI in one step (non-interactive)..."
+	@. venv/bin/activate && python build_and_publish.py
 
 # Publish package to TestPyPI
 publish-test: build update-version
