@@ -31,6 +31,28 @@ test: setup
 	@echo "Testing PyLLM..."
 	@. venv/bin/activate && python -m unittest discover
 
+# Run command tests
+test-commands: setup
+	@echo "Testing PyLLM commands..."
+	@chmod +x test_commands.sh
+	@./test_commands.sh
+
+# Test installation options
+test-installation: setup
+	@echo "Testing PyLLM installation options..."
+	@chmod +x test_installation_options.sh
+	@./test_installation_options.sh
+
+# Test model installation
+test-models: setup
+	@echo "Testing PyLLM model installation..."
+	@chmod +x test_model_installation.sh
+	@./test_model_installation.sh
+
+# Run all tests
+test-all: test test-commands test-installation test-models
+	@echo "All tests completed!"
+
 # Lint code
 lint: setup
 	@echo "Linting PyLLM..."
@@ -130,7 +152,11 @@ help:
 	@echo "Available targets:"
 	@echo "  setup     - Set up the project"
 	@echo "  clean     - Clean the project"
-	@echo "  test      - Run tests"
+	@echo "  test      - Run unit tests"
+	@echo "  test-commands - Run command tests"
+	@echo "  test-installation - Test installation options"
+	@echo "  test-models - Test model installation"
+	@echo "  test-all   - Run all tests"
 	@echo "  lint      - Lint the code"
 	@echo "  format    - Format the code with black"
 	@echo "  run       - Run the API server"

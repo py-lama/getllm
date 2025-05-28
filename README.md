@@ -49,6 +49,11 @@ getllm is a Python package for managing LLM models with Ollama integration and g
 - **Model Management**: Install, list, and select models
 - **Hugging Face Integration**: Search and install models from Hugging Face
 - **Automatic Model Installation**: Automatically install models when they are not found
+- **Multiple Ollama Installation Options**:
+  - Direct installation using official script
+  - Docker-based installation
+  - Bexy sandbox for testing
+  - Mock mode for development without Ollama
 - **Fallback Mechanisms**: Use fallback models when the requested model is not available
 - **Environment Configuration**: Configure Ollama through environment variables
 - **Special Model Handling**: Special installation process for SpeakLeash Bielik models
@@ -456,6 +461,77 @@ else:
 installed_models = ollama.list_installed_models()
 for model in installed_models:
     print(f"Installed model: {model['name']}")
+```
+
+## Ollama Installation Options
+
+GetLLM now offers multiple ways to install and use Ollama:
+
+### 1. Direct Installation (Recommended)
+
+Installs Ollama directly on your system using the official installation script:
+
+```bash
+# When prompted during model search or installation
+$ getllm --search bielik
+# Select 'Install Ollama directly (recommended)' when prompted
+```
+
+### 2. Docker-based Installation
+
+Installs and runs Ollama in a Docker container:
+
+```bash
+# When prompted during model search or installation
+$ getllm --search bielik
+# Select 'Install Ollama using Docker' when prompted
+```
+
+Requires Docker to be installed on your system.
+
+### 3. Bexy Sandbox
+
+Runs Ollama in a sandboxed environment using the bexy package:
+
+```bash
+# When prompted during model search or installation
+$ getllm --search bielik
+# Select 'Use bexy sandbox for testing' when prompted
+```
+
+Requires the bexy package to be available in your project.
+
+### 4. Mock Mode
+
+Run getllm without Ollama for testing and development:
+
+```bash
+# Use the --mock flag with any command
+$ getllm --mock --search bielik
+$ getllm --mock code 'Write a function to calculate factorial'
+
+# Or select 'Continue in mock mode' when prompted during installation
+```
+
+## Testing
+
+GetLLM includes several test suites to ensure all features work correctly:
+
+```bash
+# Run unit tests
+make test
+
+# Test command-line functionality
+make test-commands
+
+# Test installation options
+make test-installation
+
+# Test model installation
+make test-models
+
+# Run all tests
+make test-all
 ```
 
 ## Environment Variables
