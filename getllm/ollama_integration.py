@@ -100,14 +100,37 @@ class OllamaIntegration:
     def _check_ollama_installed(self) -> bool:
         """Check if Ollama is installed on the system."""
         try:
-            # Try to find the Ollama executable
+            # Common installation paths for Ollama
+            common_paths = [
+                self.ollama_path,  # First try the path provided or default 'ollama'
+                '/usr/local/bin/ollama',
+                '/usr/bin/ollama',
+                '/opt/homebrew/bin/ollama',  # Common on macOS
+                os.path.expanduser('~/go/bin/ollama'),  # Common when installed from source
+            ]
+            
+            # On Windows, add common Windows paths
+            if os.name == 'nt':
+                common_paths.extend([
+                    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'ollama', 'ollama.exe'),
+                    os.path.join(os.environ.get('PROGRAMFILES', ''), 'ollama', 'ollama.exe'),
+                ])
+            
+            # Check each path directly
+            for path in common_paths:
+                if os.path.isfile(path) and os.access(path, os.X_OK):
+                    logger.info(f"Ollama found at: {path}")
+                    self.ollama_path = path
+                    return True
+            
+            # If not found in common paths, try using which/where command
             if os.name == 'nt':  # Windows
                 which_cmd = 'where'
             else:  # Unix/Linux/MacOS
                 which_cmd = 'which'
                 
             result = subprocess.run(
-                [which_cmd, self.ollama_path],
+                [which_cmd, 'ollama'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -115,9 +138,9 @@ class OllamaIntegration:
             )
             
             if result.returncode == 0:
-                logger.info(f"Ollama found at: {result.stdout.strip()}")
-                # Update ollama_path to the full path
-                self.ollama_path = result.stdout.strip()
+                path = result.stdout.strip().split('\n')[0]  # Take first result if multiple
+                logger.info(f"Ollama found at: {path}")
+                self.ollama_path = path
                 return True
             else:
                 logger.warning(f"Ollama not found in PATH. Command '{which_cmd} {self.ollama_path}' failed.")
