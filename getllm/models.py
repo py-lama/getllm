@@ -64,15 +64,15 @@ def get_central_env_path():
     parts = current_dir.parts
     for i in range(len(parts) - 1, 0, -1):
         if parts[i] == "py-lama":
-            return Path(*parts[:i+1]) / "pylama" / ".env"
+            return Path(*parts[:i+1]) / "devlama" / ".env"
     
     # If not found, look for the directory structure
     while current_dir != current_dir.parent:  # Stop at the root directory
         # Check if this looks like the py-lama directory
-        if (current_dir / "pylama").exists() and (current_dir / "loglama").exists():
-            return current_dir / "pylama" / ".env"
-        if (current_dir / "pylama").exists() and (current_dir / "getllm").exists():
-            return current_dir / "pylama" / ".env"
+        if (current_dir / "devlama").exists() and (current_dir / "loglama").exists():
+            return current_dir / "devlama" / ".env"
+        if (current_dir / "devlama").exists() and (current_dir / "getllm").exists():
+            return current_dir / "devlama" / ".env"
         
         # Move up one directory
         current_dir = current_dir.parent

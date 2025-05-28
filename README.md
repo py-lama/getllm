@@ -16,7 +16,7 @@ PyLLM provides comprehensive integration with Ollama for managing and using LLM 
 
 PyLLM integrates with LogLama as the primary service in the PyLama ecosystem. This integration provides:
 
-- **Centralized Environment Management**: Environment variables are loaded from the central `.env` file in the `pylama` directory
+- **Centralized Environment Management**: Environment variables are loaded from the central `.env` file in the `devlama` directory
 - **Shared Configuration**: Model configurations are shared across all PyLama components
 - **Dependency Management**: Dependencies are validated and installed by LogLama
 - **Service Orchestration**: Services are started in the correct order using LogLama CLI
