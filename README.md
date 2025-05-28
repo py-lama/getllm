@@ -96,7 +96,6 @@ getllm --search bielik
 getllm --update-hf
 ```
 
-> **Note**: Direct code generation with `getllm "prompt"` is currently being migrated from the `devlama` package. Use the interactive mode (`getllm -i`) for code generation in the meantime.
 
 ### Model Management
 

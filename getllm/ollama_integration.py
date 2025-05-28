@@ -531,6 +531,91 @@ class OllamaIntegration:
         except Exception as e:
             logger.warning(f"Could not list installed models: {e}")
             return []
+            
+    def query_ollama(self, prompt, template_type=None, **template_args):
+        """
+        Generate code using Ollama API.
+        
+        Args:
+            prompt: The prompt to send to the model
+            template_type: The type of template to use
+            **template_args: Additional arguments for the template
+            
+        Returns:
+            The generated code
+        """
+        # Ensure Ollama is running
+        self.start_ollama()
+        
+        # Check if the model is available
+        if not self.check_model_availability():
+            raise RuntimeError(f"Model {self.model} is not available")
+        
+        # Prepare the prompt with template if provided
+        if template_type:
+            from getllm.cli import get_template
+            full_prompt = get_template(prompt, template_type, **template_args)
+        else:
+            full_prompt = prompt
+        
+        # Set up the request
+        request_data = {
+            "model": self.model,
+            "prompt": full_prompt,
+            "stream": False
+        }
+        
+        # Add optional parameters if provided
+        if 'temperature' in template_args:
+            request_data['temperature'] = float(template_args['temperature'])
+        
+        # Show progress spinner
+        spinner = ProgressSpinner(message=f"Generating code with {self.model}")
+        spinner.start()
+        
+        try:
+            # Set timeout from environment variable or default to 120 seconds for code generation
+            timeout = int(os.getenv('OLLAMA_TIMEOUT', '120'))
+            
+            print(f"Sending request to Ollama API with timeout {timeout}s...")
+            
+            # Make the API request
+            response = requests.post(
+                self.generate_api_url,
+                json=request_data,
+                timeout=timeout
+            )
+            response.raise_for_status()
+            
+            # Get the response text
+            result = response.json().get('response', '')
+            return result
+            
+        except Exception as e:
+            logger.error(f"Error generating code: {e}")
+            raise RuntimeError(f"Failed to generate code: {e}")
+        finally:
+            spinner.stop()
+            
+    def extract_python_code(self, text):
+        """
+        Extract Python code from the response.
+        
+        Args:
+            text: The text to extract code from
+            
+        Returns:
+            The extracted Python code
+        """
+        # Use regex to find Python code blocks
+        code_blocks = re.findall(r'```(?:python)?\s*([\s\S]*?)```', text)
+        
+        if code_blocks:
+            # Return the first code block found
+            return code_blocks[0].strip()
+        else:
+            # If no code blocks found, return the original text
+            return text
 
 
 # Convenience functions for external use
