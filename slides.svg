@@ -474,11 +474,11 @@
 
       <text x="400" y="500" text-anchor="middle" font-family="Arial, sans-serif"
             font-size="18" fill="white">
-        🔗 PyLama ecossytem
+        🔗 HuggingFace
       </text>
       <text x="600" y="500" text-anchor="middle" font-family="Arial, sans-serif"
             font-size="18" fill="white">
-        🤖 Ollama 🔗 HuggingFace
+        🤖 Ollama
       </text>
       <text x="800" y="500" text-anchor="middle" font-family="Arial, sans-serif"
             font-size="18" fill="white">
