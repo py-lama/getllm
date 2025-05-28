@@ -184,11 +184,12 @@ def generate_code_interactive(mock_mode=False):
         print("Using mock mode (no Ollama required)")
     else:
         # Get the default model
-        model = models.get_default_model()
-        if not model:
+        model_name = models.get_default_model()
+        if not model_name:
             print("No default model set. Please set a default model first.")
             return
-        runner = get_ollama_integration(model=model)
+        runner = get_ollama_integration(model=model_name)
+        runner.model = model_name  # Ensure the model name is set correctly
     
     # Get the prompt from the user
     prompt = questionary.text("Enter your code generation prompt:").ask()
