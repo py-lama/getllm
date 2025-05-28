@@ -170,6 +170,58 @@ getllm --search bielik
 getllm --update-hf
 ```
 
+## Testing
+
+The PyLama ecosystem includes comprehensive testing tools that can be used to test GetLLM and other projects.
+
+### Makefile Testing
+
+Test the GetLLM Makefile using the following commands from the root directory:
+
+```bash
+# Test only the GetLLM Makefile
+./test_all_makefiles.sh --test-only "getllm"
+
+# Test with verbose output
+./test_all_makefiles.sh --verbose --test-only "getllm"
+
+# Try to fix common issues
+./test_all_makefiles.sh --fix --test-only "getllm"
+```
+
+### Docker-based Testing
+
+Test GetLLM in an isolated Docker container:
+
+```bash
+# Test GetLLM in Docker
+./docker_test_makefiles.sh --test-only "getllm"
+```
+
+### GitHub Actions Testing
+
+Test and validate GetLLM's GitHub Actions workflows:
+
+```bash
+# Validate GitHub Actions workflows
+./tests/validate_github_workflows.sh
+
+# Test GitHub Actions workflows locally
+./tests/test_github_actions.sh --test-only "getllm/ci.yml" --job build-test
+```
+
+### Using the Makefile in tests directory
+
+The `tests` directory contains a comprehensive Makefile for testing the entire ecosystem:
+
+```bash
+# Test GetLLM Makefile
+cd tests && make test-makefiles
+
+# Test GitHub Actions workflows
+cd tests && make test-github-actions
+```
+
 ## Known Issues
 
 - **Direct Code Generation**: The direct code generation functionality (e.g., `getllm "create a function"`) is currently experiencing timeout issues with the Ollama API. Use the interactive mode (`getllm -i`) for code generation in the meantime.
