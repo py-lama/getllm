@@ -8,6 +8,7 @@ MENU_OPTIONS = [
     ("List installed models", "installed"),
     ("Install model (select from list)", "wybierz-model"),
     ("Search Hugging Face models", "search-hf"),
+    ("Search ollama models", "search-ollama"),
     ("Set default model (select from list)", "wybierz-default"),
     ("Generate code (interactive)", "generate"),
     ("Update models list from ollama.com", "update"),
@@ -305,19 +306,97 @@ def interactive_shell(mock_mode=False):
             choose_model("set as default", models.set_default_model)
         elif args[0] == "search-hf":
             # Search for models on Hugging Face
-            from getllm.models import interactive_model_search
+            from getllm.models import search_huggingface_models, DEFAULT_HF_MODELS
             query = questionary.text("Enter search term for Hugging Face models:").ask()
             if query:
-                selected_model = interactive_model_search(query)
-                if selected_model:
-                    # Ask if the user wants to install the model
-                    install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
-                    if install_now:
-                        models.install_model(selected_model)
+                print(f"Searching for models matching '{query}' on Hugging Face...")
+                # First try to get models from the search function
+                models_list = search_huggingface_models(query)
+                
+                # If no models found but query contains 'biel', try to find Bielik models from DEFAULT_HF_MODELS
+                if not models_list and 'biel' in query.lower():
+                    print("Using hardcoded Bielik models list...")
+                    models_list = [m for m in DEFAULT_HF_MODELS if 'bielik' in m['id'].lower()]
+                
+                if not models_list:
+                    print(f"No models found matching '{query}'.")
+                else:
+                    # Create choices for the questionary select
+                    choices = []
+                    for m in models_list:
+                        # Handle different model formats
+                        model_id = m.get('id', m.get('name', ''))
+                        model_desc = m.get('description', m.get('desc', ''))
+                        
+                        choices.append(questionary.Choice(
+                            title=f"{model_id} - {model_desc}",
+                            value=model_id
+                        ))
+                    
+                    # Add a cancel option
+                    choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
+                    
+                    # Ask the user to select a model
+                    selected_model = questionary.select(
+                        "Select a model to install:",
+                        choices=choices
+                    ).ask()
+                    
+                    # If user selected Cancel, return early
+                    if selected_model and selected_model != "__CANCEL__":
+                        # Ask if the user wants to install the model
+                        install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                        if install_now:
+                            models.install_model(selected_model)
+        
+        elif args[0] == "search-ollama":
+            # Search for models on Ollama
+            query = questionary.text("Enter search term for ollama models:").ask()
+            if query:
+                print(f"Searching for models matching '{query}' in ollama library...")
+                # Get all models and filter by query
+                models_list = models.get_models()
+                query = query.lower()
+                
+                filtered_models = [
+                    m for m in models_list 
+                    if query in m['name'].lower() or 
+                       query in m.get('desc', '').lower()
+                ]
+                
+                if not filtered_models:
+                    print(f"No models found matching '{query}'.")
+                else:
+                    # Create choices for the questionary select
+                    choices = []
+                    for m in filtered_models:
+                        choices.append(questionary.Choice(
+                            title=f"{m['name']:<25} {m.get('size', ''):<10} {m.get('desc', '')}",
+                            value=m['name']
+                        ))
+                    
+                    # Add a cancel option
+                    choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
+                    
+                    # Ask the user to select a model
+                    selected_model = questionary.select(
+                        "Select a model to install:",
+                        choices=choices
+                    ).ask()
+                    
+                    # If user selected Cancel, return early
+                    if selected_model and selected_model != "__CANCEL__":
+                        # Ask if the user wants to install the model
+                        install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                        if install_now:
+                            models.install_model(selected_model)
         elif args[0] == "update-hf":
             # Update models from Hugging Face
-            from getllm.models import update_models_from_huggingface
+            from getllm.models import update_models_from_huggingface, update_huggingface_models_cache
             print("Updating models from Hugging Face...")
+            # First update the cache
+            update_huggingface_models_cache()
+            # Then update the models list
             update_models_from_huggingface()
         elif args[0] == "generate":
             generate_code_interactive(mock_mode=mock_mode)

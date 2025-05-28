@@ -1,0 +1,20 @@
+[
+  {
+    "id": "speakleash/Bielik-1.5B-v3.0-Instruct-GGUF",
+    "description": "Bielik 1.5B v3.0 Instruct GGUF",
+    "downloads": "1K+",
+    "source": "huggingface"
+  },
+  {
+    "id": "speakleash/Bielik-4.5B-v3.0-Instruct-GGUF",
+    "description": "Bielik 4.5B v3.0 Instruct GGUF",
+    "downloads": "1K+",
+    "source": "huggingface"
+  },
+  {
+    "id": "speakleash/Bielik-11B-v2.3-Instruct-GGUF",
+    "description": "Bielik 11B v2.3 Instruct GGUF",
+    "downloads": "500+",
+    "source": "huggingface"
+  }
+]

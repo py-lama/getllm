@@ -276,42 +276,252 @@ def list_installed_models():
         print(f"Error listing installed models: {e}")
         return []
 
+# Hardcoded list of popular Hugging Face GGUF models
+DEFAULT_HF_MODELS = [
+    {
+        'id': 'TheBloke/Llama-2-7B-Chat-GGUF',
+        'description': 'Llama 2 7B Chat GGUF',
+        'downloads': '100K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/Mistral-7B-Instruct-v0.2-GGUF',
+        'description': 'Mistral 7B Instruct v0.2 GGUF',
+        'downloads': '50K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/Llama-3-8B-Instruct-GGUF',
+        'description': 'Llama 3 8B Instruct GGUF',
+        'downloads': '100K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/phi-2-GGUF',
+        'description': 'Phi-2 GGUF',
+        'downloads': '50K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF',
+        'description': 'TinyLlama 1.1B Chat GGUF',
+        'downloads': '10K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/Gemma-7B-it-GGUF',
+        'description': 'Gemma 7B Instruct GGUF',
+        'downloads': '20K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/Gemma-2B-it-GGUF',
+        'description': 'Gemma 2B Instruct GGUF',
+        'downloads': '10K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/CodeLlama-7B-Instruct-GGUF',
+        'description': 'CodeLlama 7B Instruct GGUF',
+        'downloads': '50K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'TheBloke/WizardCoder-Python-7B-V1.0-GGUF',
+        'description': 'WizardCoder Python 7B GGUF',
+        'downloads': '20K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'speakleash/Bielik-1.5B-v3.0-Instruct-GGUF',
+        'description': 'Bielik 1.5B v3.0 Instruct GGUF',
+        'downloads': '1K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'speakleash/Bielik-4.5B-v3.0-Instruct-GGUF',
+        'description': 'Bielik 4.5B v3.0 Instruct GGUF',
+        'downloads': '1K+',
+        'source': 'huggingface'
+    },
+    {
+        'id': 'speakleash/Bielik-11B-v2.3-Instruct-GGUF',
+        'description': 'Bielik 11B v2.3 Instruct GGUF',
+        'downloads': '500+',
+        'source': 'huggingface'
+    }
+]
+
+# Path to the HF models cache file
+def get_hf_models_cache_path():
+    return os.path.join(os.path.dirname(__file__), 'hf_models.json')
+
 def get_huggingface_models():
     """
     Get a list of popular models from Hugging Face.
+    First tries to load from the cache file, then falls back to the hardcoded list.
     
     Returns:
         A list of dictionaries containing model information.
     """
-    try:
-        # Use the search function with no query to get popular models
-        return search_huggingface_models(query=None, limit=50)
-    except Exception as e:
-        print(f"Error getting Hugging Face models: {e}")
-        return []
+    # Try to load from cache file first
+    cache_path = get_hf_models_cache_path()
+    if os.path.exists(cache_path):
+        try:
+            with open(cache_path, 'r') as f:
+                cached_models = json.load(f)
+            if cached_models and len(cached_models) > 0:
+                return cached_models
+        except Exception as e:
+            print(f"Warning: Could not load HF models from cache: {e}")
+    
+    # Fall back to hardcoded list
+    return DEFAULT_HF_MODELS
 
 def search_huggingface_models(query=None, limit=20):
     """
     Search for models on Hugging Face that match the given query.
+    Uses the cached or hardcoded list and filters by the query.
     
     Args:
-        query: The search query (e.g., "bielik"). If None, returns popular GGUF models.
+        query: The search query (e.g., "bielik"). If None, returns all models.
         limit: Maximum number of results to return.
         
     Returns:
         A list of dictionaries containing model information.
     """
     try:
-        # Base URL for Hugging Face model search
-        if query:
-            url = f"https://huggingface.co/search/models?search={query}&sort=downloads&filter=gguf"
-        else:
-            # Default to popular GGUF models if no query provided
-            url = "https://huggingface.co/models?sort=downloads&filter=gguf"
+        # First try to use the local cache or hardcoded models
+        all_models = get_huggingface_models()
         
-        # Fetch the search results page
-        response = requests.get(url)
-        response.raise_for_status()
+        # If no query, return all models up to the limit
+        if not query:
+            return all_models[:limit]
+        
+        # Filter models by query
+        query = query.lower()
+        filtered_models = [
+            model for model in all_models 
+            if query in model['id'].lower() or 
+               query in model.get('description', '').lower()
+        ]
+        
+        # If we found models in the cache/hardcoded list, return them
+        if filtered_models:
+            return filtered_models[:limit]
+        
+        # If no models found in cache/hardcoded list but we have a specific query for "bielik",
+        # return the predefined Bielik models from DEFAULT_HF_MODELS
+        if query == "bielik":
+            bielik_models = [
+                model for model in DEFAULT_HF_MODELS 
+                if 'bielik' in model['id'].lower()
+            ]
+            if bielik_models:
+                return bielik_models[:limit]
+        
+        # If still no models found, try a direct search with error handling
+        try:
+            # Use a custom User-Agent to avoid 401 errors
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            }
+            
+            # Fetch models matching the query
+            url = f"https://huggingface.co/search/models?search={query}&sort=downloads&filter=gguf"
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            # Parse the HTML content
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Find all model cards
+            model_cards = soup.select('article.overview-card')
+            
+            results = []
+            for card in model_cards[:limit]:
+                # Extract model ID (username/model_name)
+                model_id_elem = card.select_one('a.header-link')
+                if not model_id_elem:
+                    continue
+                
+                model_id = model_id_elem.text.strip()
+                
+                # Extract description
+                desc_elem = card.select_one('p.description')
+                description = desc_elem.text.strip() if desc_elem else ""
+                
+                # Extract downloads count
+                downloads_elem = card.select_one('div.flex.flex-col span.whitespace-nowrap')
+                downloads = downloads_elem.text.strip() if downloads_elem else ""
+                
+                results.append({
+                    'id': model_id,
+                    'description': description,
+                    'downloads': downloads,
+                    'source': 'huggingface'
+                })
+            
+            return results
+        except Exception as e:
+            # If direct search fails, return the filtered models from cache/hardcoded list
+            print(f"Error searching Hugging Face models: {e}")
+            return filtered_models[:limit]
+    except Exception as e:
+        # If anything fails, return an empty list
+        print(f"Error searching Hugging Face models: {e}")
+        return []
+
+def update_huggingface_models_cache():
+    """
+    Update the Hugging Face models cache by fetching from the HF website.
+    This is a separate function that can be called to refresh the cache.
+    
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        print("Fetching models from Hugging Face...")
+        # Use multiple User-Agent options to avoid 401 errors
+        headers_options = [
+            {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Safari/605.1.15'
+            },
+            {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
+            }
+        ]
+        
+        # Try different URLs and User-Agents
+        urls = [
+            "https://huggingface.co/models?sort=downloads&filter=gguf",
+            "https://huggingface.co/models?filter=gguf&sort=downloads",
+            "https://huggingface.co/models?filter=gguf"
+        ]
+        
+        response = None
+        success = False
+        
+        # Try each combination of URL and header until one works
+        for url in urls:
+            for headers in headers_options:
+                try:
+                    response = requests.get(url, headers=headers, timeout=10)
+                    response.raise_for_status()
+                    success = True
+                    break
+                except Exception as e:
+                    print(f"Attempt failed with {url}: {e}")
+                    continue
+            if success:
+                break
+        
+        # If all attempts failed, raise an exception
+        if not success or not response:
+            raise Exception("All attempts to fetch models from Hugging Face failed")
         
         # Parse the HTML content
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -320,7 +530,7 @@ def search_huggingface_models(query=None, limit=20):
         model_cards = soup.select('article.overview-card')
         
         results = []
-        for card in model_cards[:limit]:
+        for card in model_cards[:50]:  # Get top 50 models
             # Extract model ID (username/model_name)
             model_id_elem = card.select_one('a.header-link')
             if not model_id_elem:
@@ -348,10 +558,48 @@ def search_huggingface_models(query=None, limit=20):
                 'source': 'huggingface'
             })
         
-        return results
+        # Always ensure Bielik models are included
+        # First, get all Bielik models from DEFAULT_HF_MODELS
+        bielik_models = [m for m in DEFAULT_HF_MODELS if 'bielik' in m['id'].lower()]
+        
+        # Then check if they're already in the results
+        existing_ids = [m['id'] for m in results]
+        for bielik_model in bielik_models:
+            if bielik_model['id'] not in existing_ids:
+                results.append(bielik_model)
+                existing_ids.append(bielik_model['id'])
+        
+        # If we didn't find any models, use the default list
+        if not results:
+            results = DEFAULT_HF_MODELS
+        
+        # Save to cache file
+        cache_path = get_hf_models_cache_path()
+        try:
+            # Ensure the directory exists
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            with open(cache_path, 'w') as f:
+                json.dump(results, f, indent=2)
+            
+            print(f"Successfully updated HF models cache with {len(results)} models.")
+            return True
+        except Exception as e:
+            print(f"Error saving HF models cache: {e}")
+            return False
+    
     except Exception as e:
-        print(f"Error searching Hugging Face models: {e}")
-        return []
+        print(f"Error updating HF models cache: {e}")
+        # If there was an error, ensure we at least have the default models in the cache
+        try:
+            cache_path = get_hf_models_cache_path()
+            os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            with open(cache_path, 'w') as f:
+                json.dump(DEFAULT_HF_MODELS, f, indent=2)
+            print("Created default HF models cache.")
+            return False
+        except Exception as inner_e:
+            print(f"Error creating default HF models cache: {inner_e}")
+            return False
 
 def interactive_model_search(query=None, check_ollama=True):
     """
@@ -399,19 +647,41 @@ def interactive_model_search(query=None, check_ollama=True):
                 return None
         
         print(f"Searching for models matching '{query}' on Hugging Face...")
-        models = search_huggingface_models(query)
         
-        if not models:
+        # First try to update the cache, but don't fail if it doesn't work
+        try:
+            update_huggingface_models_cache()
+        except Exception as e:
+            print(f"Warning: Could not update Hugging Face models cache: {e}")
+            print("Using cached or default models instead.")
+        
+        # Search for models with our enhanced search function
+        models_list = search_huggingface_models(query)
+        
+        if not models_list:
             print(f"No models found matching '{query}'.")
             return None
         
         # Create choices for the questionary select
-        choices = [
-            questionary.Choice(
-                title=f"{m['name']:<50} {m['size']:<10} Downloads: {m['downloads']:,} | {m['desc']}",
-                value=m['name']
-            ) for m in models
-        ]
+        choices = []
+        for m in models_list:
+            # Handle different model formats (from cache vs. direct search)
+            model_id = m.get('id', m.get('name', ''))
+            model_size = m.get('size', 'Unknown')
+            model_desc = m.get('description', m.get('desc', ''))
+            model_downloads = m.get('downloads', 'N/A')
+            
+            # Format the display title
+            if isinstance(model_downloads, (int, float)):
+                title = f"{model_id:<50} {model_size:<10} Downloads: {model_downloads:,} | {model_desc}"
+            else:
+                title = f"{model_id:<50} {model_size:<10} {model_desc}"
+            
+            choices.append(questionary.Choice(title=title, value=model_id))
+        
+        if not choices:
+            print(f"No models found matching '{query}'.")
+            return None
         
         # Add a cancel option
         choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
@@ -434,7 +704,8 @@ def interactive_model_search(query=None, check_ollama=True):
 
 def update_models_from_huggingface(query=None, interactive=True):
     """
-    Search for models on Hugging Face and update the local models.json file.
+    Update the local models.json file with models from Hugging Face.
+    First updates the HF models cache, then allows selection of models to add to the local models list.
     
     Args:
         query: The search query (e.g., "bielik"). If None and interactive is True, prompts the user.
@@ -443,65 +714,129 @@ def update_models_from_huggingface(query=None, interactive=True):
     Returns:
         The updated list of models.
     """
-    try:
-        # Get existing models
-        existing_models = load_models_from_json()
-        existing_names = [model["name"] for model in existing_models]
+    # First update the HF models cache
+    print("Updating Hugging Face models cache...")
+    success = update_huggingface_models_cache()
+    if not success:
+        print("Warning: Using fallback models list due to update failure.")
+    
+    # Check if questionary is available for interactive mode
+    if interactive:
+        try:
+            import questionary
+        except ImportError:
+            print("questionary package is required for interactive mode.")
+            print("Install it with: pip install questionary")
+            interactive = False
+    
+    # Get all HF models from cache or default list
+    all_hf_models = get_huggingface_models()
+    
+    # If query is provided, filter models
+    if query:
+        print(f"Filtering models matching '{query}'...")
+        query = query.lower()
+        filtered_models = [
+            model for model in all_hf_models 
+            if query in model['id'].lower() or 
+               query in model.get('description', '').lower()
+        ]
+        models_data = filtered_models
+    else:
+        models_data = all_hf_models
+    
+    if not models_data:
+        print(f"No models found matching '{query if query else 'criteria'}'.")
+        return get_models()
+    
+    # If interactive mode, allow selection of models to add
+    if interactive:
+        # If no query and interactive mode, prompt for filtering
+        if query is None:
+            filter_query = questionary.text("Enter filter term for Hugging Face models (or leave empty for all):").ask()
+            if filter_query:
+                filter_query = filter_query.lower()
+                models_data = [
+                    model for model in models_data 
+                    if filter_query in model['id'].lower() or 
+                       filter_query in model.get('description', '').lower()
+                ]
+                if not models_data:
+                    print(f"No models found matching '{filter_query}'.")
+                    return get_models()
         
-        # Search for models
-        if interactive:
-            selected_model = interactive_model_search(query)
-            if selected_model:
-                # Check if the model is already in the list
-                if selected_model not in existing_names:
-                    # Get detailed information about the selected model
-                    model_info = search_huggingface_models(selected_model, limit=1)
-                    if model_info:
-                        # Add the model to the list
-                        existing_models.append(model_info[0])
-                        # Save the updated list
-                        save_models_to_json(existing_models)
-                        print(f"Added {selected_model} to the models list.")
-                        
-                        # Ask if the user wants to install the model now
-                        import questionary
-                        install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
-                        if install_now:
-                            install_model(selected_model)
-                    else:
-                        print(f"Could not get detailed information about {selected_model}.")
-                else:
-                    print(f"Model {selected_model} is already in the list.")
-                    # Ask if the user wants to install the model now
-                    import questionary
-                    install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
-                    if install_now:
-                        install_model(selected_model)
-        else:
-            # Non-interactive mode: just search and add models
-            if not query:
-                print("Error: Query is required in non-interactive mode.")
-                return existing_models
-                
-            new_models = search_huggingface_models(query)
-            added = 0
+        choices = []
+        for model in models_data:
+            model_id = model.get('id', '')
+            desc = model.get('description', '')[:50] + ('...' if len(model.get('description', '')) > 50 else '')
+            downloads = model.get('downloads', '')
             
-            for model in new_models:
-                if model["name"] not in existing_names:
-                    existing_models.append(model)
-                    existing_names.append(model["name"])
-                    added += 1
-            
-            if added > 0:
-                save_models_to_json(existing_models)
-                print(f"Added {added} new models to the models list.")
-            else:
-                print("No new models added.")
+            choices.append(
+                questionary.Choice(
+                    title=f"{model_id} - {desc} ({downloads})",
+                    value=model
+                )
+            )
         
-        return existing_models
-    except Exception as e:
-        print(f"Error updating models from Hugging Face: {e}")
-        return load_models_from_json()
+        if not choices:
+            print("No models found to add.")
+            return get_models()
+        
+        print("\nSelect models to add to your local models list:")
+        selected_models = questionary.checkbox(
+            "Select models:",
+            choices=choices
+        ).ask()
+        
+        if not selected_models:
+            print("No models selected.")
+            return get_models()
+        
+        models_data = selected_models
+    
+    # Load existing models
+    existing_models = load_models_from_json()
+    existing_model_names = {m['name'] for m in existing_models}
+    
+    # Add new models
+    new_models = []
+    for model in models_data:
+        model_id = model.get('id', '')
+        if model_id and model_id not in existing_model_names:
+            # Extract size from description if available
+            size = "Unknown"
+            desc = model.get('description', '')
+            size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', desc)
+            if size_match:
+                size = size_match.group(1)
+            
+            new_model = {
+                'name': model_id,
+                'size': size,
+                'desc': desc[:100] + ('...' if len(desc) > 100 else ''),
+                'source': 'huggingface'
+            }
+            
+            new_models.append(new_model)
+            existing_model_names.add(model_id)  # Add to set to avoid duplicates
+    
+    if new_models:
+        # Add new models to existing models
+        existing_models.extend(new_models)
+        
+        # Save updated models list
+        save_models_to_json(existing_models)
+        
+        print(f"Added {len(new_models)} new models to the local models list.")
+        
+        # Print the new models
+        print("\nNew models added:")
+        for model in new_models:
+            print(f"  {model['name']:<40} {model['size']:<6} {model['desc']}")
+    else:
+        print("No new models added. All selected models already exist in the local list.")
+    
+    return existing_models
 
 def update_models_from_ollama():
     """
