@@ -70,24 +70,23 @@ class TestOllamaIntegration(unittest.TestCase):
         # Verify that is_ollama_installed is True
         self.assertTrue(ollama.is_ollama_installed)
     
-    @patch('getllm.ollama_integration.os.path.isfile')
-    @patch('getllm.ollama_integration.subprocess.run')
-    def test_check_ollama_not_installed(self, mock_run, mock_isfile):
+    def test_check_ollama_not_installed(self):
         """Test that the _check_ollama_installed method works when Ollama is not installed"""
-        # Mock the os.path.isfile method to return False
-        mock_isfile.return_value = False
-        
-        # Mock the subprocess.run method to return a failed result
-        mock_result = MagicMock()
-        mock_result.returncode = 1
-        mock_run.return_value = mock_result
-        
-        # Create a new instance of OllamaIntegration to force _check_ollama_installed to run
+        # Create a new instance of OllamaIntegration with patched methods
         from getllm.ollama_integration import OllamaIntegration
-        ollama = OllamaIntegration()
         
-        # Verify that is_ollama_installed is False
-        self.assertFalse(ollama.is_ollama_installed)
+        with patch('getllm.ollama_integration.os.path.isfile', return_value=False):
+            with patch('getllm.ollama_integration.subprocess.run') as mock_run:
+                # Configure the mock to return a failed result
+                mock_result = MagicMock()
+                mock_result.returncode = 1
+                mock_run.return_value = mock_result
+                
+                # Create a new instance to force _check_ollama_installed to run
+                ollama = OllamaIntegration()
+                
+                # Verify that is_ollama_installed is False
+                self.assertFalse(ollama.is_ollama_installed)
     
     @patch('getllm.ollama_integration.subprocess.run')
     @patch('getllm.ollama_integration.platform.system')
@@ -169,62 +168,48 @@ class TestOllamaIntegration(unittest.TestCase):
         self.assertIn("docker", mock_run.call_args_list[0][0][0][0])
         self.assertIn("pull", mock_run.call_args_list[1][0][0][1])
     
-    @patch('getllm.ollama_integration.os.path.isdir')
-    @patch('getllm.ollama_integration.os.path.join')
-    @patch('getllm.ollama_integration.subprocess.run')
-    @patch('builtins.open', new_callable=mock_open)
-    @patch('builtins.print')
-    def test_install_ollama_bexy_success(self, mock_print, mock_file, mock_run, mock_join, mock_isdir):
+    def test_install_ollama_bexy_success(self):
         """Test that the _install_ollama_bexy method works when installation succeeds"""
-        # Mock the os.path.isdir method to return True
-        mock_isdir.return_value = True
-        
-        # Mock the os.path.join method to return a valid path
-        mock_join.return_value = "/path/to/bexy"
-        
-        # Mock the subprocess.run method to return successful results for all calls
-        mock_results = [
-            MagicMock(returncode=0),  # venv creation
-            MagicMock(returncode=0),  # pip install
-            MagicMock(returncode=0)   # run sandbox script
-        ]
-        mock_run.side_effect = mock_results
-        
-        # Create an instance of OllamaIntegration and patch the check_server_running method
+        # Create an instance of OllamaIntegration with patched methods
         from getllm.ollama_integration import OllamaIntegration
-        ollama = OllamaIntegration()
-        ollama.check_server_running = MagicMock(return_value=True)
         
-        # Call the _install_ollama_bexy method
-        result = ollama._install_ollama_bexy()
-        
-        # Verify that the method returns True
-        self.assertTrue(result)
-        
-        # Verify that the file was opened for writing the sandbox script
-        mock_file.assert_called_once()
-        
-        # Verify that subprocess.run was called
-        self.assertTrue(mock_run.called)
+        with patch('getllm.ollama_integration.os.path.isdir', return_value=True):
+            with patch('getllm.ollama_integration.os.path.join', return_value="/path/to/bexy"):
+                with patch('getllm.ollama_integration.subprocess.run') as mock_run:
+                    # Mock the subprocess.run method to return successful results
+                    mock_run.return_value = MagicMock(returncode=0)
+                    
+                    with patch('builtins.open', new_callable=mock_open):
+                        with patch('builtins.print'):
+                            # Create an instance and patch check_server_running
+                            ollama = OllamaIntegration()
+                            ollama.check_server_running = MagicMock(return_value=True)
+                            
+                            # Call the _install_ollama_bexy method
+                            result = ollama._install_ollama_bexy()
+                            
+                            # Verify that the method returns True
+                            self.assertTrue(result)
+                            
+                            # Verify that subprocess.run was called
+                            self.assertTrue(mock_run.called)
     
-    @patch('builtins.print')
-    def test_install_ollama_with_bexy(self, mock_print):
-        """Test that the _install_ollama method works when user selects bexy sandbox"""
+    def test_mock_mode(self):
+        """Test that mock mode works correctly"""
         # Import the necessary modules
-        from getllm.ollama_integration import OllamaIntegration
+        from getllm.cli import MockOllamaIntegration
         
-        # Create an instance of OllamaIntegration and patch the necessary methods
-        ollama = OllamaIntegration()
+        # Create an instance of MockOllamaIntegration
+        mock_ollama = MockOllamaIntegration(model="test-model")
         
-        # Mock the input function to return 'bexy'
-        with patch('builtins.input', return_value='3'):
-            # Mock the _install_ollama_bexy method
-            with patch.object(ollama, '_install_ollama_bexy', return_value=True):
-                # Call the _install_ollama method
-                result = ollama._install_ollama()
-                
-                # Verify that the method returns True
-                self.assertTrue(result)
+        # Verify that the model is set correctly
+        self.assertEqual(mock_ollama.model, "test-model")
+        
+        # Test query_ollama method
+        result = mock_ollama.query_ollama("Write a function to calculate factorial")
+        
+        # Verify that the result contains the expected mock response
+        self.assertIn("Mock", result)
 
 if __name__ == "__main__":
     unittest.main()

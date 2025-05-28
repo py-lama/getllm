@@ -30,8 +30,10 @@ run_command() {
 # Function to run a command with a timeout to avoid hanging
 run_command_timeout() {
   echo -e "${YELLOW}$ $1${NC}"
-  timeout 5 bash -c "$1" || echo -e "${YELLOW}Command timed out (expected for interactive commands)${NC}"
+  timeout 10 bash -c "$1" || echo -e "${YELLOW}Command timed out (expected for interactive commands)${NC}"
   echo ""
+  # Sleep briefly to allow processes to clean up
+  sleep 1
 }
 
 # Activate the virtual environment if it exists
