@@ -347,83 +347,71 @@ def interactive_shell(mock_mode=False):
         elif args[0] == "search-ollama":
             # Search for models on Ollama
             query = questionary.text("Enter search term for ollama models:").ask()
-            if query:
-                print(f"Searching for models matching '{query}' in ollama library...")
-                # Get all models and filter by query
-                models_list = models.get_models()
-                query = query.lower()
+            if not query:
+                print("Search cancelled.")
+                continue
                 
-                filtered_models = [
-                    m for m in models_list 
-                    if query in m['name'].lower() or 
-                       query in m.get('desc', '').lower()
-                ]
+            print(f"Searching for models matching '{query}'...")
+            
+            # Get the OllamaModelManager instance
+            from getllm.models.ollama import OllamaModelManager
+            from getllm.models import search_huggingface_models
+            
+            ollama_manager = OllamaModelManager()
+            
+            # Search for models in both Ollama and Hugging Face
+            ollama_models = ollama_manager.search_models(query=query, limit=20)
+            hf_models = search_huggingface_models(query=query, limit=20) if not ollama_models else []
+            
+            if not ollama_models and not hf_models:
+                print(f"No models found matching '{query}' in either Ollama library or Hugging Face.")
+                continue
                 
-                if not filtered_models:
-                    print(f"No models found in Ollama library matching '{query}'. Searching Hugging Face GGUF models...")
-                    try:
-                        from getllm.models import search_huggingface_models
-                        hf_models = search_huggingface_models(query=query, limit=20)
-                        if hf_models:
-                            print(f"Found {len(hf_models)} Hugging Face GGUF models matching '{query}'.")
-                            # Combine Ollama and Hugging Face models
-                            all_models = filtered_models + hf_models
-                            # Create choices for the questionary select
-                            choices = []
-                            for m in all_models:
-                                if isinstance(m, dict) and 'name' in m:
-                                    choices.append(questionary.Choice(
-                                        title=f"{m['name']:<25} {m.get('size', ''):<10} {m.get('desc', '')}",
-                                        value=m['name']
-                                    ))
-                                else:
-                                    choices.append(questionary.Choice(
-                                        title=f"{m.get('name', m.get('id', '')):<25} {m.get('size', ''):<10} [HuggingFace] {m.get('description', '')}",
-                                        value=m.get('name', m.get('id', ''))
-                                    ))
-                            # Add a cancel option
-                            choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
-                            
-                            # Ask the user to select a model
-                            selected_model = questionary.select(
-                                "Select a model to install:",
-                                choices=choices
-                            ).ask()
-                            
-                            # If user selected Cancel, return early
-                            if selected_model and selected_model != "__CANCEL__":
-                                # Ask if the user wants to install this model now?
-                                install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
-                                if install_now:
-                                    models.install_model(selected_model)
-                        else:
-                            print(f"No Hugging Face GGUF models found matching '{query}'.")
-                    except Exception as e:
-                        print(f"Error searching Hugging Face models: {e}")
-                else:
-                    # Create choices for the questionary select
-                    choices = []
-                    for m in filtered_models:
-                        choices.append(questionary.Choice(
-                            title=f"{m['name']:<25} {m.get('size', ''):<10} {m.get('desc', '')}",
-                            value=m['name']
-                        ))
-
-                    # Add a cancel option
-                    choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
-                    
-                    # Ask the user to select a model
-                    selected_model = questionary.select(
-                        "Select a model to install:",
-                        choices=choices
-                    ).ask()
-                    
-                    # If user selected Cancel, return early
-                    if selected_model and selected_model != "__CANCEL__":
-                        # Ask if the user wants to install this model now?
-                        install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
-                        if install_now:
-                            models.install_model(selected_model)
+            # Create choices for the questionary select
+            choices = []
+            
+            # Add Ollama models first
+            if ollama_models:
+                choices.append(questionary.Separator("--- Ollama Models ---"))
+                for model in ollama_models:
+                    model_name = model.get('name', 'Unknown')
+                    model_size = model.get('size', model.get('size_b', ''))
+                    model_desc = model.get('description', model.get('desc', 'No description'))
+                    choices.append(questionary.Choice(
+                        title=f"{model_name:<30} {str(model_size):<10} {model_desc}",
+                        value=model_name
+                    ))
+            
+            # Add Hugging Face models if no Ollama models were found
+            if not ollama_models and hf_models:
+                choices.append(questionary.Separator("--- Hugging Face GGUF Models ---"))
+                for model in hf_models:
+                    model_id = model.get('id', model.get('name', 'Unknown'))
+                    model_size = model.get('size', '')
+                    model_desc = model.get('description', model.get('desc', 'No description'))
+                    choices.append(questionary.Choice(
+                        title=f"{model_id:<30} {str(model_size):<10} [HuggingFace] {model_desc}",
+                        value=model_id
+                    ))
+            
+            # Add a cancel option
+            choices.append(questionary.Separator("-" * 50))
+            choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
+            
+            # Ask the user to select a model
+            selected_model = questionary.select(
+                "Select a model to install:",
+                choices=choices
+            ).ask()
+            
+            # Handle the user's selection
+            if selected_model and selected_model != "__CANCEL__":
+                install_now = questionary.confirm(
+                    f"Do you want to install '{selected_model}' now?", 
+                    default=True
+                ).ask()
+                if install_now:
+                    models.install_model(selected_model)
         elif args[0] == "update-hf":
             # Update models from Hugging Face
             print("Updating models from Hugging Face...")

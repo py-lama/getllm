@@ -4,7 +4,7 @@ Ollama model manager for handling Ollama models.
 import json
 import os
 from pathlib import Path
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union
 import subprocess
 
 from .base import BaseModelManager
@@ -110,10 +110,39 @@ class OllamaModelManager(BaseModelManager):
         except (json.JSONDecodeError, IOError):
             return []
     
+    def search_models(self, query: str = None, limit: int = 20) -> List[Dict]:
+        """
+        Search for models matching a query string.
+        
+        Args:
+            query: The search query string
+            limit: Maximum number of models to return
+            
+        Returns:
+            List of model dictionaries matching the query
+        """
+        # First try to get models from the cache
+        models = self.get_available_models()
+        
+        # If no query, return all models up to the limit
+        if not query:
+            return models[:limit]
+        
+        # Filter models by query
+        query = query.lower()
+        filtered_models = [
+            model for model in models
+            if (query in model.get('name', '').lower() or
+                query in model.get('description', '').lower() or
+                query in model.get('id', '').lower())
+        ]
+        
+        return filtered_models[:limit]
+    
     def get_model_info(self, model_name: str) -> Optional[Dict]:
         """Get information about a specific model."""
         models = self.get_available_models()
         for model in models:
-            if model.get('name') == model_name:
+            if model.get('name') == model_name or model.get('id') == model_name:
                 return model
         return None
