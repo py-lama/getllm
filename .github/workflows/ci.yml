@@ -26,7 +26,7 @@ jobs:
           mkdir -p artifact
           cp -r getllm tests scripts *.md *.toml *.sh *.svg *.ini *.example *.pypirc Makefile Dockerfile* LICENSE artifact/ || true
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v2
         with:
           name: github-pages
           path: artifact
