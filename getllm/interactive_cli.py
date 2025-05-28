@@ -1,4 +1,5 @@
 from getllm import models
+from getllm.models import update_huggingface_models_cache, update_models_from_huggingface
 import questionary
 import sys
 
