@@ -315,6 +315,8 @@ def main():
     parser.add_argument("-d", "--dependencies", help="List of allowed dependencies (only for template=dependency_aware)")
     parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
     parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
+    parser.add_argument("--search", metavar="QUERY", help="Search for models on Hugging Face matching the query")
+    parser.add_argument("--update-hf", action="store_true", help="Update models list from Hugging Face")
     
     # Only add subparsers if not using direct prompt
     if not direct_prompt:
@@ -348,6 +350,28 @@ def main():
         if args.command == "code":
             prompt = " ".join(args.prompt)
     
+    # Handle Hugging Face model search
+    if args.search or args.update_hf:
+        from getllm.models import update_models_from_huggingface, interactive_model_search
+        
+        if args.search:
+            # Search for models on Hugging Face
+            print(f"Searching for models matching '{args.search}' on Hugging Face...")
+            selected_model = interactive_model_search(args.search)
+            if selected_model:
+                # Ask if the user wants to install the model
+                import questionary
+                install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                if install_now:
+                    from getllm.models import install_model
+                    install_model(selected_model)
+        else:  # args.update_hf
+            # Update models from Hugging Face
+            print("Updating models from Hugging Face...")
+            update_models_from_huggingface()
+        
+        return 0
+        
     # Handle interactive mode
     if args.interactive or args.command == "interactive":
         interactive_mode(mock_mode=args.mock)

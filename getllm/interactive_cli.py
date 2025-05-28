@@ -7,9 +7,11 @@ MENU_OPTIONS = [
     ("Show default model", "default"),
     ("List installed models", "installed"),
     ("Install model (select from list)", "wybierz-model"),
+    ("Search Hugging Face models", "search-hf"),
     ("Set default model (select from list)", "wybierz-default"),
     ("Generate code (interactive)", "generate"),
     ("Update models list from ollama.com", "update"),
+    ("Update models list from Hugging Face", "update-hf"),
     ("Test default model", "test"),
     ("Exit", "exit")
 ]
@@ -168,10 +170,26 @@ def interactive_shell(mock_mode=False):
             choose_model("install", models.install_model)
         elif args[0] == "wybierz-default":
             choose_model("set as default", models.set_default_model)
+        elif args[0] == "search-hf":
+            # Search for models on Hugging Face
+            from getllm.models import interactive_model_search
+            query = questionary.text("Enter search term for Hugging Face models:").ask()
+            if query:
+                selected_model = interactive_model_search(query)
+                if selected_model:
+                    # Ask if the user wants to install the model
+                    install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                    if install_now:
+                        models.install_model(selected_model)
+        elif args[0] == "update-hf":
+            # Update models from Hugging Face
+            from getllm.models import update_models_from_huggingface
+            print("Updating models from Hugging Face...")
+            update_models_from_huggingface()
         elif args[0] == "generate":
             generate_code_interactive(mock_mode=mock_mode)
         else:
-            print("Unknown command. Available: list, install <model>, installed, set-default <model>, default, update, test, wybierz-model, wybierz-default, generate, exit")
+            print("Unknown command. Available: list, install <model>, installed, set-default <model>, default, update, update-hf, test, wybierz-model, search-hf, wybierz-default, generate, exit")
 
 if __name__ == "__main__":
     # Check if mock mode is requested
