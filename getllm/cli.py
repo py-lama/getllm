@@ -275,6 +275,12 @@ def main():
     
     # Check if the first argument is a command or looks like a prompt
     commands = ["code", "list", "install", "installed", "set-default", "default", "update", "test", "interactive"]
+    
+    # Special handling for -search command (common user error)
+    if len(args_to_parse) >= 2 and args_to_parse[0] == "-search":
+        # Convert to proper format
+        args_to_parse[0] = "--search"
+    
     if len(args_to_parse) > 0 and not args_to_parse[0].startswith('-') and args_to_parse[0] not in commands:
         # This is a direct prompt
         direct_prompt = True
@@ -316,6 +322,8 @@ def main():
     parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
     parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
     parser.add_argument("--search", metavar="QUERY", help="Search for models on Hugging Face matching the query")
+    # Add a separate search command for better CLI experience
+    parser.add_argument("-S", "--find-model", dest="search", metavar="QUERY", help="Alias for --search")
     parser.add_argument("--update-hf", action="store_true", help="Update models list from Hugging Face")
     
     # Only add subparsers if not using direct prompt
