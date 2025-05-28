@@ -362,13 +362,22 @@ def interactive_model_search(query=None, check_ollama=True):
             from getllm.ollama_integration import OllamaIntegration
             ollama = OllamaIntegration()
             if not ollama.is_ollama_installed:
-                print("\nOllama is not installed. Please install Ollama from https://ollama.com")
-                print("Installation instructions:")
-                print("  - Linux/macOS: curl -fsSL https://ollama.com/install.sh | sh")
-                print("  - Windows: Visit https://ollama.com/download")
-                print("\nIf you want to continue without Ollama, use the --mock flag:")
-                print("  getllm --mock --search <query>")
-                return None
+                print("\nOllama is not installed but required for model installation.")
+                install_choice = questionary.confirm("Do you want to install Ollama now?", default=True).ask()
+                
+                if install_choice:
+                    # Try to install Ollama
+                    if ollama._install_ollama():
+                        print("\n✅ Ollama installed successfully! Continuing with model search...")
+                    else:
+                        print("\nIf you want to continue without Ollama, use the --mock flag:")
+                        print("  getllm --mock --search <query>")
+                        return None
+                else:
+                    print("\nOllama installation skipped.")
+                    print("If you want to continue without Ollama, use the --mock flag:")
+                    print("  getllm --mock --search <query>")
+                    return None
         
         # If no query provided, ask the user
         if query is None:
