@@ -167,16 +167,45 @@ print("Hello, World!")
 # """ + text
 
 def check_ollama():
-    """Check if Ollama is running and return its version."""
+    """Check if Ollama is installed and running, and return its version."""
+    # First check if Ollama is installed
     try:
-        # Try to connect to the Ollama API
+        import subprocess
+        import os
+        
+        # Use the appropriate command based on the OS
+        if os.name == 'nt':  # Windows
+            which_cmd = 'where'
+        else:  # Unix/Linux/MacOS
+            which_cmd = 'which'
+            
+        result = subprocess.run(
+            [which_cmd, 'ollama'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+        
+        if result.returncode != 0:
+            print("Ollama is not installed. Please install Ollama from https://ollama.com")
+            print("Installation instructions:")
+            print("  - Linux/macOS: curl -fsSL https://ollama.com/install.sh | sh")
+            print("  - Windows: Visit https://ollama.com/download")
+            return None
+    except Exception as e:
+        print(f"Error checking if Ollama is installed: {e}")
+        return None
+    
+    # Then check if Ollama is running
+    try:
         import requests
-        response = requests.get("http://localhost:11434/api/version", timeout=2)
+        response = requests.get("http://localhost:11434/api/version")
         if response.status_code == 200:
-            return response.json().get("version", "unknown")
-        return None
+            return response.json().get("version")
     except Exception:
-        return None
+        pass
+    return None
 
 def save_code_to_file(code, filename=None):
     """Save the generated code to a file."""
@@ -267,14 +296,28 @@ def main():
         if args.search:
             # Search for models on Hugging Face
             print(f"Searching for models matching '{args.search}' on Hugging Face...")
-            selected_model = interactive_model_search(args.search)
+            # Skip Ollama check if in mock mode
+            selected_model = interactive_model_search(args.search, check_ollama=(not args.mock))
             if selected_model:
                 # Ask if the user wants to install the model
                 import questionary
                 install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
                 if install_now:
+                    # Check if we're in mock mode
+                    if args.mock:
+                        print("\nUsing mock mode. Model installation is simulated.")
+                        print(f"Model '{selected_model}' would be installed in normal mode.")
+                        return 0
+                    
+                    # Try to install the model
                     from getllm.models import install_model
-                    install_model(selected_model)
+                    success = install_model(selected_model)
+                    
+                    # If installation failed, suggest mock mode
+                    if not success:
+                        print("\nIf you want to continue without Ollama, use the --mock flag:")
+                        print("  getllm --mock --search <query>")
+                        return 1
         else:  # args.update_hf
             # Update models from Hugging Face
             print("Updating models from Hugging Face...")

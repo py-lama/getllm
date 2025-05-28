@@ -343,18 +343,32 @@ def search_huggingface_models(query=None, limit=20):
         print(f"Error searching Hugging Face models: {e}")
         return []
 
-def interactive_model_search(query=None):
+def interactive_model_search(query=None, check_ollama=True):
     """
     Search for models on Hugging Face and allow the user to interactively select one to install.
     
     Args:
         query: The search query (e.g., "bielik"). If None, prompts the user for a query.
+        check_ollama: Whether to check if Ollama is installed before proceeding.
         
     Returns:
         The selected model ID or None if cancelled.
     """
     try:
         import questionary
+        
+        # Check if Ollama is installed if requested
+        if check_ollama:
+            from getllm.ollama_integration import OllamaIntegration
+            ollama = OllamaIntegration()
+            if not ollama.is_ollama_installed:
+                print("\nOllama is not installed. Please install Ollama from https://ollama.com")
+                print("Installation instructions:")
+                print("  - Linux/macOS: curl -fsSL https://ollama.com/install.sh | sh")
+                print("  - Windows: Visit https://ollama.com/download")
+                print("\nIf you want to continue without Ollama, use the --mock flag:")
+                print("  getllm --mock --search <query>")
+                return None
         
         # If no query provided, ask the user
         if query is None:

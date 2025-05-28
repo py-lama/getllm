@@ -122,6 +122,31 @@ This happens because getllm requires the Ollama binary to be installed and avail
    make docker-test-with-ollama
    ```
 
+#### Implementation Details
+
+As of version 0.1.37, getllm now properly handles the case when Ollama is not installed:
+
+- The code checks if the Ollama binary is available in the PATH before attempting to use it
+- If Ollama is not installed, it provides clear error messages with installation instructions
+- The `--mock` flag allows using getllm without Ollama for testing purposes
+- Proper error handling prevents cryptic "No such file or directory" errors
+
+#### Testing the Ollama Dependency
+
+To test how getllm handles the Ollama dependency, use the Ansible playbook:
+
+```bash
+# Run the Ollama dependency test
+cd tests/ansible
+ansible-playbook test_ollama_dependency.yml
+```
+
+This playbook tests:
+1. Detecting when Ollama is not installed
+2. Providing appropriate error messages
+3. Using mock mode as a fallback
+4. Working correctly when Ollama is installed
+
 ### Timeout Errors
 
 When testing direct code generation, you might encounter timeout errors like `ReadTimeoutError: HTTPConnectionPool(host='localhost', port=11434): Read timed out`. This indicates that the Ollama server is not responding in time, which could be due to:
