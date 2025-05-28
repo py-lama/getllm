@@ -42,3 +42,4 @@ __all__ = [
     'install_ollama_model',
     'list_ollama_models'
 ]
+\n__version__ = '0.1.23'

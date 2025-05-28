@@ -20,6 +20,7 @@ setup(
         "bs4>=0.0.1,<0.0.2",
         "beautifulsoup4>=4.12.2,<5.0.0",
         "python-dotenv>=1.0.0,<2.0.0",
+        "dialogchain"
     ],
     entry_points={
         'console_scripts': [
