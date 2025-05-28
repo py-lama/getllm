@@ -1,24 +1,12 @@
 #!/usr/bin/env python3
 
-import argparse
+# Direct wrapper script for getllm with support for the same interface as devlama
 import sys
 import os
-import re
-import tempfile
+import argparse
 import platform
-from pathlib import Path
-
-# Import from getllm modules
+from getllm.ollama_integration import get_ollama_integration, OllamaIntegration
 from getllm import models
-from getllm.ollama_integration import OllamaIntegration, get_ollama_integration
-
-# Create .getllm directory if it doesn't exist
-PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.getllm')
-os.makedirs(PACKAGE_DIR, exist_ok=True)
-
-# Configure logging
-import logging
-logger = logging.getLogger('getllm.cli')
 
 # Template functions for code generation
 def get_template(prompt, template_type, **kwargs):
@@ -81,52 +69,6 @@ Fix the code to solve the problem and provide the corrected version."""
     
     # Format the template with the provided arguments
     return template.format(prompt=prompt, **kwargs)
-
-# Sandbox classes for code execution
-class PythonSandbox:
-    """Simple implementation of PythonSandbox."""
-    def __init__(self):
-        pass
-    
-    def run(self, code):
-        """Run Python code in a sandbox."""
-        # Create a temporary file to store the code
-        with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as f:
-            f.write(code.encode('utf-8'))
-            temp_file = f.name
-        
-        try:
-            # Run the code in a separate process
-            import subprocess
-            result = subprocess.run(
-                [sys.executable, temp_file],
-                capture_output=True,
-                text=True,
-                timeout=30  # 30 second timeout
-            )
-            
-            # Return the result
-            if result.returncode == 0:
-                return {
-                    "output": result.stdout,
-                    "error": None
-                }
-            else:
-                return {
-                    "output": result.stdout,
-                    "error": result.stderr
-                }
-        except Exception as e:
-            return {
-                "output": "",
-                "error": str(e)
-            }
-        finally:
-            # Clean up the temporary file
-            try:
-                os.unlink(temp_file)
-            except:
-                pass
 
 # Mock implementation for testing without Ollama
 class MockOllamaIntegration:
@@ -196,31 +138,6 @@ print("Searching for 6:", bst.search(6).value if bst.search(6) else "Not found")
         """Mock implementation of extract_python_code."""
         return text
 
-# Helper functions
-def save_code_to_file(code, filename=None):
-    """Save the generated code to a file."""
-    if filename is None:
-        import time
-        timestamp = time.strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(PACKAGE_DIR, f"generated_script_{timestamp}.py")
-    
-    # Ensure the target directory exists
-    os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
-    
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(code)
-    
-    logger.info(f'Saved script to file: {filename}')
-    return os.path.abspath(filename)
-
-def execute_code(code, use_docker=False):
-    """Execute the generated code and return the result."""
-    # Create the sandbox
-    sandbox = PythonSandbox()
-    
-    # Execute the code
-    return sandbox.run(code)
-
 def extract_python_code(text):
     """Extract Python code from the response."""
     # If the response already looks like code (no markdown), return it
@@ -261,47 +178,66 @@ def check_ollama():
     except Exception:
         return None
 
-def interactive_mode(mock_mode=False):
-    """Run in interactive mode, allowing the user to input prompts."""
-    from getllm.interactive_cli import interactive_shell
-    interactive_shell(mock_mode=mock_mode)
+def save_code_to_file(code, filename=None):
+    """Save the generated code to a file."""
+    if filename is None:
+        import time
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        package_dir = os.path.join(os.path.expanduser('~'), '.getllm')
+        os.makedirs(package_dir, exist_ok=True)
+        filename = os.path.join(package_dir, f"generated_script_{timestamp}.py")
+    
+    # Ensure the target directory exists
+    os.makedirs(os.path.dirname(os.path.abspath(filename)), exist_ok=True)
+    
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(code)
+    
+    return os.path.abspath(filename)
+
+def execute_code(code):
+    """Execute the generated code and return the result."""
+    # Create a temporary file to store the code
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as f:
+        f.write(code.encode('utf-8'))
+        temp_file = f.name
+    
+    try:
+        # Run the code in a separate process
+        import subprocess
+        result = subprocess.run(
+            [sys.executable, temp_file],
+            capture_output=True,
+            text=True,
+            timeout=30  # 30 second timeout
+        )
+        
+        # Return the result
+        if result.returncode == 0:
+            return {
+                "output": result.stdout,
+                "error": None
+            }
+        else:
+            return {
+                "output": result.stdout,
+                "error": result.stderr
+            }
+    except Exception as e:
+        return {
+            "output": "",
+            "error": str(e)
+        }
+    finally:
+        # Clean up the temporary file
+        try:
+            os.unlink(temp_file)
+        except:
+            pass
 
 def main():
     """Main entry point for the getllm CLI."""
-    # First check for direct prompts
-    direct_prompt = False
-    prompt = None
-    args_to_parse = sys.argv[1:]
-    
-    # Check if the first argument is a command or looks like a prompt
-    commands = ["code", "list", "install", "installed", "set-default", "default", "update", "test", "interactive"]
-    if len(args_to_parse) > 0 and not args_to_parse[0].startswith('-') and args_to_parse[0] not in commands:
-        # This is a direct prompt
-        direct_prompt = True
-        prompt_parts = []
-        options = []
-        
-        # Separate prompt parts from options
-        i = 0
-        while i < len(args_to_parse):
-            if args_to_parse[i].startswith('-'):
-                options.append(args_to_parse[i])
-                # If this option takes a value, add it too
-                if i + 1 < len(args_to_parse) and not args_to_parse[i+1].startswith('-'):
-                    if args_to_parse[i] in ["-m", "--model", "-t", "--template", "-d", "--dependencies"]:
-                        options.append(args_to_parse[i+1])
-                        i += 1
-            else:
-                prompt_parts.append(args_to_parse[i])
-            i += 1
-        
-        # Combine prompt parts
-        prompt = " ".join(prompt_parts)
-        
-        # Parse just the options
-        args_to_parse = options
-    
-    # Create the argument parser
     parser = argparse.ArgumentParser(description="getllm CLI - LLM Model Management and Code Generation")
     
     # Global options
@@ -316,71 +252,22 @@ def main():
     parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
     parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
     
-    # Only add subparsers if not using direct prompt
-    if not direct_prompt:
-        # Subcommands
-        subparsers = parser.add_subparsers(dest="command")
-        
-        # Code generation command
-        code_parser = subparsers.add_parser("code", help="Generate Python code using LLM models")
-        code_parser.add_argument("prompt", nargs="+", help="Task to be performed by Python code")
-        
-        # Model management commands
-        subparsers.add_parser("list", help="List available models (from models.json)")
-        parser_install = subparsers.add_parser("install", help="Install a model using Ollama")
-        parser_install.add_argument("model", help="Name of the model to install")
-        subparsers.add_parser("installed", help="List installed models (ollama list)")
-        parser_setdef = subparsers.add_parser("set-default", help="Set the default model")
-        parser_setdef.add_argument("model", help="Name of the model to set as default")
-        subparsers.add_parser("default", help="Show the default model")
-        subparsers.add_parser("update", help="Update the list of models from ollama.com/library")
-        subparsers.add_parser("test", help="Test the default model")
-        subparsers.add_parser("interactive", help="Run in interactive mode")
+    # Add a positional argument for the prompt
+    parser.add_argument("prompt", nargs="*", help="Task to be performed by Python code (optional)")
     
     # Parse the arguments
-    if direct_prompt:
-        # For direct prompt, parse only the options
-        args = parser.parse_args(args_to_parse)
-        args.command = None  # No command when using direct prompt
-    else:
-        # Normal parsing for commands
-        args = parser.parse_args()
-        if args.command == "code":
-            prompt = " ".join(args.prompt)
+    args = parser.parse_args()
     
     # Handle interactive mode
-    if args.interactive or args.command == "interactive":
-        interactive_mode(mock_mode=args.mock)
+    if args.interactive:
+        from getllm.interactive_cli import interactive_shell
+        interactive_shell(mock_mode=args.mock)
         return 0
     
-    # Handle model management commands
-    if args.command in ["list", "install", "installed", "set-default", "default", "update", "test"]:
-        if args.command == "list":
-            models_list = models.get_models()
-            print("\nAvailable models:")
-            for m in models_list:
-                print(f"  {m.get('name', '-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}")
-        elif args.command == "install":
-            models.install_model(args.model)
-        elif args.command == "installed":
-            models.list_installed_models()
-        elif args.command == "set-default":
-            models.set_default_model(args.model)
-        elif args.command == "default":
-            print("Default model:", models.get_default_model())
-        elif args.command == "update":
-            models.update_models_from_ollama()
-        elif args.command == "test":
-            default = models.get_default_model()
-            print(f"Test default model: {default}")
-            if default:
-                print("OK: Default model is set.")
-            else:
-                print("ERROR: Default model is NOT set!")
-        return 0
-    
-    # If we have a prompt, generate code
-    if prompt:
+    # Handle direct prompt if provided
+    if args.prompt:
+        prompt = " ".join(args.prompt)
+        
         # Get model and template
         model = args.model
         template = args.template or "platform_aware"
@@ -416,7 +303,12 @@ def main():
         # Generate code
         print(f"\nGenerating code with model: {runner.model}")
         print(f"Using template: {template}")
-        code = runner.query_ollama(prompt, template_type=template, **template_args)
+        
+        # Format the prompt with the template
+        formatted_prompt = get_template(prompt, template, **template_args)
+        
+        # Query the model
+        code = runner.query_ollama(formatted_prompt)
         
         # Extract Python code if needed
         if hasattr(runner, "extract_python_code") and callable(getattr(runner, "extract_python_code")):
@@ -447,9 +339,9 @@ def main():
         
         return 0
     
-    # If no command or prompt, show help
+    # If no prompt, show help
     parser.print_help()
     return 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

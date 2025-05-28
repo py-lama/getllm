@@ -276,6 +276,193 @@ def list_installed_models():
         print(f"Error listing installed models: {e}")
         return []
 
+def search_huggingface_models(query=None, limit=20):
+    """
+    Search for models on Hugging Face that match the given query.
+    
+    Args:
+        query: The search query (e.g., "bielik"). If None, returns popular GGUF models.
+        limit: Maximum number of results to return.
+        
+    Returns:
+        A list of dictionaries containing model information.
+    """
+    import requests
+    
+    try:
+        # Base URL for the Hugging Face API
+        api_url = "https://huggingface.co/api/models"
+        
+        # Parameters for the API request
+        params = {
+            "limit": limit,
+            "filter": "gguf",  # Filter for GGUF models compatible with Ollama
+            "sort": "downloads",
+            "direction": -1  # Sort by most downloads
+        }
+        
+        # Add search query if provided
+        if query:
+            params["search"] = query
+        
+        # Make the API request
+        response = requests.get(api_url, params=params)
+        response.raise_for_status()
+        
+        # Parse the response
+        models_data = response.json()
+        
+        # Format the results
+        results = []
+        for model in models_data:
+            # Extract model information
+            model_id = model.get("id", "")
+            model_name = model_id.split("/")[-1] if "/" in model_id else model_id
+            
+            # Get the model size if available
+            size = "Unknown"
+            for tag in model.get("tags", []):
+                if "q4_k_m" in tag or "q4_0" in tag or "q5_k_m" in tag or "q8_0" in tag:
+                    size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', model.get("description", ""))
+                    if size_match:
+                        size = size_match.group(1)
+                    break
+            
+            # Add the model to the results
+            results.append({
+                "name": model_id,  # Full model ID (e.g., "SpeakLeash/bielik-1.5b-v3.0-instruct-gguf")
+                "size": size,
+                "desc": model.get("description", "")[:100] + ("..." if len(model.get("description", "")) > 100 else ""),
+                "downloads": model.get("downloads", 0),
+                "likes": model.get("likes", 0),
+                "tags": model.get("tags", [])
+            })
+        
+        return results
+    except Exception as e:
+        print(f"Error searching Hugging Face models: {e}")
+        return []
+
+def interactive_model_search(query=None):
+    """
+    Search for models on Hugging Face and allow the user to interactively select one to install.
+    
+    Args:
+        query: The search query (e.g., "bielik"). If None, prompts the user for a query.
+        
+    Returns:
+        The selected model ID or None if cancelled.
+    """
+    try:
+        import questionary
+        
+        # If no query provided, ask the user
+        if query is None:
+            query = questionary.text("Enter a search term for Hugging Face models:").ask()
+            if not query:
+                print("Search cancelled.")
+                return None
+        
+        print(f"Searching for models matching '{query}' on Hugging Face...")
+        models = search_huggingface_models(query)
+        
+        if not models:
+            print(f"No models found matching '{query}'.")
+            return None
+        
+        # Create choices for the questionary select
+        choices = [
+            questionary.Choice(
+                title=f"{m['name']:<50} {m['size']:<10} Downloads: {m['downloads']:,} | {m['desc']}",
+                value=m['name']
+            ) for m in models
+        ]
+        
+        # Add a cancel option
+        choices.append(questionary.Choice(title="Cancel", value=None))
+        
+        # Ask the user to select a model
+        selected = questionary.select(
+            "Select a model to install:",
+            choices=choices
+        ).ask()
+        
+        return selected
+    except Exception as e:
+        print(f"Error in interactive model search: {e}")
+        return None
+
+def update_models_from_huggingface(query=None, interactive=True):
+    """
+    Search for models on Hugging Face and update the local models.json file.
+    
+    Args:
+        query: The search query (e.g., "bielik"). If None and interactive is True, prompts the user.
+        interactive: Whether to allow interactive selection of models.
+        
+    Returns:
+        The updated list of models.
+    """
+    try:
+        # Get existing models
+        existing_models = load_models_from_json()
+        existing_names = [model["name"] for model in existing_models]
+        
+        # Search for models
+        if interactive:
+            selected_model = interactive_model_search(query)
+            if selected_model:
+                # Check if the model is already in the list
+                if selected_model not in existing_names:
+                    # Get detailed information about the selected model
+                    model_info = search_huggingface_models(selected_model, limit=1)
+                    if model_info:
+                        # Add the model to the list
+                        existing_models.append(model_info[0])
+                        # Save the updated list
+                        save_models_to_json(existing_models)
+                        print(f"Added {selected_model} to the models list.")
+                        
+                        # Ask if the user wants to install the model now
+                        import questionary
+                        install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                        if install_now:
+                            install_model(selected_model)
+                    else:
+                        print(f"Could not get detailed information about {selected_model}.")
+                else:
+                    print(f"Model {selected_model} is already in the list.")
+                    # Ask if the user wants to install the model now
+                    import questionary
+                    install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                    if install_now:
+                        install_model(selected_model)
+        else:
+            # Non-interactive mode: just search and add models
+            if not query:
+                print("Error: Query is required in non-interactive mode.")
+                return existing_models
+                
+            new_models = search_huggingface_models(query)
+            added = 0
+            
+            for model in new_models:
+                if model["name"] not in existing_names:
+                    existing_models.append(model)
+                    existing_names.append(model["name"])
+                    added += 1
+            
+            if added > 0:
+                save_models_to_json(existing_models)
+                print(f"Added {added} new models to the models list.")
+            else:
+                print("No new models added.")
+        
+        return existing_models
+    except Exception as e:
+        print(f"Error updating models from Hugging Face: {e}")
+        return load_models_from_json()
+
 def update_models_from_ollama():
     """
     Fetch the latest coding-related models up to 7B from the Ollama library web page
@@ -462,13 +649,54 @@ class ModelManager:
         """
         return self.default_model
     
-    def update_models_from_remote(self):
+    def update_models_from_remote(self, source="ollama", query=None, interactive=True):
         """
-        Update the models list from the Ollama library.
+        Update the models list from a remote source.
+        
+        Args:
+            source: The source to update from ("ollama" or "huggingface").
+            query: The search query for Hugging Face models.
+            interactive: Whether to allow interactive selection for Hugging Face models.
+            
+        Returns:
+            The updated list of models.
         """
-        update_models_from_ollama()
-        self.models = self.get_available_models()
-        return True
+        try:
+            if source.lower() == "huggingface":
+                models = update_models_from_huggingface(query, interactive)
+            else:
+                models = update_models_from_ollama()
+                
+            self.models = models
+            return models
+        except Exception as e:
+            print(f"Error updating models from {source}: {e}")
+            return self.models
+            
+    def search_huggingface_models(self, query=None, limit=20):
+        """
+        Search for models on Hugging Face.
+        
+        Args:
+            query: The search query.
+            limit: Maximum number of results to return.
+            
+        Returns:
+            A list of model dictionaries.
+        """
+        return search_huggingface_models(query, limit)
+        
+    def interactive_model_search(self, query=None):
+        """
+        Interactive search for models on Hugging Face.
+        
+        Args:
+            query: The search query.
+            
+        Returns:
+            The selected model ID or None if cancelled.
+        """
+        return interactive_model_search(query)
 
 if __name__ == "__main__":
     default_model = get_default_model()
