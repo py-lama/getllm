@@ -79,10 +79,10 @@ run_command "getllm code 'Write a function to calculate factorial'"
 
 # Test with different templates
 section "Templates - Mock Mode"
-run_command "getllm --mock code 'Write a function to validate user input' --template secure"
+run_command "getllm --mock -t secure code 'Write a function to validate user input'"
 
 # Test saving code (with mock mode)
 section "Save Code - Mock Mode"
-run_command "getllm --mock code 'Write a hello world program' --save"
+run_command "getllm --mock -s code 'Write a hello world program'"
 
 echo -e "\n${GREEN}All tests completed!${NC}"
