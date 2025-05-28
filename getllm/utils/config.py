@@ -4,7 +4,7 @@ Configuration utilities for the getllm application.
 import os
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict, Any
 import dotenv
 
 

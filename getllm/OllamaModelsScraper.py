@@ -100,9 +100,10 @@ class OllamaModelsScraper:
             meta_elems = card_element.find_elements(By.CSS_SELECTOR, 'div.text-sm.text-gray-500')
             metadata = [elem.text.strip().lower() for elem in meta_elems]
             
-            pulls = next((m for m in metadata if 'pull' in m or 'download' in m), "0")
-            size = next((m for m in metadata if 'gb' in m or 'mb' in m), "Unknown")
-            updated = next((m for m in metadata if 'ago' in m or 'updated' in m), "Unknown")
+            # Extract metadata using string parameter instead of text
+            pulls = next((m for m in metadata if any(x in m for x in ['pull', 'download'])), "0")
+            size = next((m for m in metadata if any(x in m for x in ['gb', 'mb'])), "Unknown")
+            updated = next((m for m in metadata if any(x in m for x in ['ago', 'updated'])), "Unknown")
             
             # Get tags
             tags = []
