@@ -338,6 +338,25 @@ def set_default_model(model_name: str, model_source: str = 'ollama') -> bool:
     except (IOError, TypeError):
         return False
 
+
+def install_model(model_name: str, model_source: str = 'ollama') -> bool:
+    """
+    Install a model from the specified source.
+    
+    Args:
+        model_name: Name of the model to install
+        model_source: Source of the model ('ollama' or 'huggingface')
+        
+    Returns:
+        bool: True if installation was successful, False otherwise
+    """
+    if model_source.lower() == 'ollama':
+        return ollama_manager.install_model(model_name)
+    elif model_source.lower() == 'huggingface':
+        return huggingface_manager.install_model(model_name)
+    else:
+        raise ValueError(f"Unsupported model source: {model_source}")
+
 __all__ = [
     'ModelManager',
     'HuggingFaceModelManager',
