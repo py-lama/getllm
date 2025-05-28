@@ -387,6 +387,11 @@ def interactive_model_search(query=None):
             choices=choices
         ).ask()
         
+        # If user selected Cancel (None), return early
+        if selected is None:
+            print("Selection cancelled.")
+            return None
+        
         return selected
     except Exception as e:
         print(f"Error in interactive model search: {e}")

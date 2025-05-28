@@ -365,6 +365,8 @@ def main():
                 if install_now:
                     from getllm.models import install_model
                     install_model(selected_model)
+            else:
+                print("Search cancelled or no model selected.")
         else:  # args.update_hf
             # Update models from Hugging Face
             print("Updating models from Hugging Face...")
