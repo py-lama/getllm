@@ -7,7 +7,7 @@ with open(os.path.join(os.path.dirname(__file__), 'README.md'), encoding='utf-8'
 
 setup(
     name="getllm",
-    version="0.1.18",
+    version="0.1.19",
     description="Python LLM operations service for the DevLama ecosystem",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -44,8 +44,8 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    url="https://github.com/tom-sapletta-com/py-lama",
+    url="https://github.com/py-lama/devlama",
     project_urls={
-        "Bug Tracker": "https://github.com/tom-sapletta-com/py-lama/issues",
+        "Bug Tracker": "https://github.com/py-lama/devlama/issues",
     },
 )

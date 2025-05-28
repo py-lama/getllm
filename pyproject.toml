@@ -4,12 +4,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "getllm"
-version = "0.1.20"
+version = "0.1.21"
 description = "Python LLM operations service for the DevLama ecosystem"
 authors = [ "Tom Sapletta <info@softreck.dev>",]
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/tom-sapletta-com/py-lama"
+repository = "https://github.com/py-lama/devlama"
 [[tool.poetry.packages]]
 include = "getllm"
 

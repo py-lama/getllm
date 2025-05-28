@@ -613,24 +613,26 @@ User
 ### Basic Usage
 
 ```bash
-# Generate code using the default model
-getllm "create a function to calculate fibonacci numbers"
+# Start interactive mode
+getllm -i
 
-# Generate and run code
-getllm -r "create a web server with Flask"
+# List available models
+getllm list
 
-# Save generated code to a file
-getllm -s "create a script to download files from URLs"
+# Install a model
+getllm install codellama:7b
 
-# Use a specific model
-getllm --model codellama:7b "create a binary search tree implementation"
+# Set default model
+getllm set-default codellama:7b
 
-# Use mock mode (no Ollama required)
-getllm --mock "print hello world"
+# Search for models on Hugging Face
+getllm --search bielik
 
-# Use a model that will be automatically installed if not available
-getllm --model SpeakLeash/bielik-1.5b-v3.0-instruct-gguf "print hello world"
+# Update models list from Hugging Face
+getllm --update-hf
 ```
+
+> **Note**: Direct code generation with `getllm "prompt"` is currently being migrated from the `devlama` package. Use the interactive mode (`getllm -i`) for code generation in the meantime.
 
 ### Model Management
 
@@ -656,6 +658,8 @@ getllm update
 
 ### Hugging Face Integration
 
+The Hugging Face integration allows you to search for and install models directly from Hugging Face:
+
 ```bash
 # Search for models on Hugging Face
 getllm --search bielik
@@ -663,6 +667,12 @@ getllm --search bielik
 # Update models list from Hugging Face
 getllm --update-hf
 ```
+
+## Known Issues
+
+- **Direct Code Generation**: The direct code generation functionality (e.g., `getllm "create a function"`) is currently being migrated from the `devlama` package. Use the interactive mode (`getllm -i`) for code generation in the meantime.
+
+- **Error Message**: If you try to use direct code generation, you might see an error like `AttributeError: 'OllamaIntegration' object has no attribute 'query_ollama'`. This will be fixed in an upcoming update.
 
 ### Interactive Mode
 
