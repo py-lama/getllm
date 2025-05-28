@@ -365,14 +365,33 @@ def main():
         if args.search:
             # Search for models on Hugging Face
             print(f"Searching for models matching '{args.search}' on Hugging Face...")
-            selected_model = interactive_model_search(args.search)
+            
+            # If in mock mode, skip Ollama checks entirely
+            if args.mock:
+                print("\nRunning in mock mode - Ollama checks bypassed")
+                selected_model = interactive_model_search(args.search, check_ollama=False)
+            else:
+                selected_model = interactive_model_search(args.search, check_ollama=True)
             if selected_model:
                 # Ask if the user wants to install the model
                 import questionary
                 install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
                 if install_now:
-                    from getllm.models import install_model
-                    install_model(selected_model)
+                    # Check if we're in mock mode
+                    if args.mock:
+                        print(f"\nUsing mock mode. Model installation is simulated.")
+                        print(f"Model '{selected_model}' would be installed in normal mode.")
+                    else:
+                        from getllm.models import install_model
+                        success = install_model(selected_model)
+                        
+                        if not success:
+                            print("\nWould you like to continue in mock mode instead?")
+                            continue_mock = questionary.confirm("Continue with mock mode?", default=True).ask()
+                            if continue_mock:
+                                print(f"\nContinuing in mock mode with model '{selected_model}'")
+                                # Set up mock environment
+                                os.environ['GETLLM_MOCK_MODEL'] = selected_model
             else:
                 print("Search cancelled or no model selected.")
         else:  # args.update_hf
