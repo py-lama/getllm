@@ -188,7 +188,24 @@ def generate_code_interactive(mock_mode=False):
         if not model_name:
             print("No default model set. Please set a default model first.")
             return
+            
+        # Check if the model is installed
         runner = get_ollama_integration(model=model_name)
+        installed_models = runner.list_installed_models()
+        model_installed = any(m.get('name', '').startswith(model_name) for m in installed_models)
+        
+        if not model_installed:
+            print(f"The default model '{model_name}' is not installed.")
+            install = questionary.confirm(
+                f"Would you like to install '{model_name}' now?", 
+                default=True
+            ).ask()
+            
+            if not install or not runner.install_model(model_name):
+                print("Please install the model first using 'ollama pull <model_name>' or choose another model.")
+                print(f"Available models: {', '.join(m.get('name', 'unknown') for m in installed_models)}")
+                return
+        
         runner.model = model_name  # Ensure the model name is set correctly
     
     # Get the prompt from the user
