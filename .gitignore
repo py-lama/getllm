@@ -5,6 +5,7 @@ logs
 .sqlite
 .env
 poetry.lock
+TODO.txt
 example.png
 fixed_script.py
 generated_script.py

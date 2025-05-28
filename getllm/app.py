@@ -13,7 +13,7 @@ import sys
 import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Initialize logging with PyLogs
+# Initialize logging with LogLama
 from getllm.logging_config import init_logging, get_logger
 
 # Initialize logging first, before any other imports
