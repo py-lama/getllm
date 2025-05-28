@@ -149,6 +149,84 @@ class OllamaIntegration:
             logger.error(f"Error checking if Ollama is installed: {e}")
             return False
 
+    def _install_ollama(self) -> bool:
+        """Attempt to install Ollama based on user confirmation.
+        
+        Returns:
+            bool: True if installation was successful, False otherwise.
+        """
+        try:
+            print("\nOllama is not installed but required for this operation.")
+            install_choice = input("Do you want to install Ollama now? (y/n): ").strip().lower()
+            
+            if install_choice != 'y' and install_choice != 'yes':
+                print("Installation cancelled. Please install Ollama manually from https://ollama.com")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+                
+            print("\nInstalling Ollama...")
+            
+            # Determine the installation command based on the OS
+            if platform.system() == "Darwin":  # macOS
+                install_cmd = "curl -fsSL https://ollama.com/install.sh | sh"
+            elif platform.system() == "Linux":
+                install_cmd = "curl -fsSL https://ollama.com/install.sh | sh"
+            elif platform.system() == "Windows":
+                print("Automatic installation on Windows is not supported.")
+                print("Please download and install Ollama from https://ollama.com")
+                return False
+            else:
+                print(f"Unsupported operating system: {platform.system()}")
+                return False
+                
+            # Execute the installation command
+            print(f"Running: {install_cmd}")
+            result = subprocess.run(
+                install_cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if result.returncode == 0:
+                print("\n✅ Ollama installed successfully!")
+                # Update the path and installation status
+                self.is_ollama_installed = self._check_ollama_installed()
+                return self.is_ollama_installed
+            else:
+                print(f"\n❌ Failed to install Ollama: {result.stderr}")
+                print("Please install Ollama manually from https://ollama.com")
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error installing Ollama: {e}")
+            print(f"\n❌ Error installing Ollama: {e}")
+            print("Please install Ollama manually from https://ollama.com")
+            return False
+    
+    def check_server_running(self) -> bool:
+        """Check if the Ollama server is running.
+        
+        Returns:
+            bool: True if Ollama server is running, False otherwise.
+        """
+        try:
+            # Check if Ollama is already running by querying the version
+            response = requests.get(self.version_api_url, timeout=5)
+            if response.status_code == 200:
+                logger.info(f"Ollama is running (version: {response.json().get('version', 'unknown')})")
+                return True
+            else:
+                logger.warning(f"Ollama server returned status code {response.status_code}")
+                return False
+        except requests.exceptions.ConnectionError:
+            logger.warning("Ollama server is not running (connection error)")
+            return False
+        except Exception as e:
+            logger.error(f"Error checking Ollama server: {e}")
+            return False
+    
     def start_ollama(self) -> bool:
         """Start the Ollama server if it's not already running.
         
@@ -158,9 +236,14 @@ class OllamaIntegration:
         # First check if Ollama is installed
         if not self.is_ollama_installed:
             logger.error("Ollama is not installed. Please install Ollama first.")
-            print("\nOllama is not installed. Please install Ollama from https://ollama.com")
-            print("If you want to continue without Ollama, use the --mock flag.")
-            return False
+            
+            # Ask user if they want to install Ollama
+            if self._install_ollama():
+                logger.info("Ollama was installed successfully")
+            else:
+                print("\nOllama is required but not installed. Please install Ollama from https://ollama.com")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
             
         try:
             # Check if Ollama is already running by querying the version
