@@ -50,20 +50,24 @@ def get_models_dir() -> Path:
     central_env_path = get_central_env_path()
     env = {}
     
-    # For test compatibility, only check existence once
     if central_env_path.exists():
         env = dotenv.dotenv_values(central_env_path)
     
-    # If not found in central .env, try local .env
-    if "MODELS_DIR" not in env:
-        local_env_path = Path(__file__).parent.parent / ".env"
-        if local_env_path.exists():
-            env = dotenv.dotenv_values(local_env_path)
+    # Then try to load from local .env if it exists
+    local_env_path = Path(__file__).parent.parent / ".env"
+    if local_env_path.exists():
+        local_env = dotenv.dotenv_values(local_env_path)
+        env.update(local_env)
     
-    # Use the configured directory or fall back to a default
-    models_dir = Path(env.get("MODELS_DIR", "./models"))
+    # Get models directory from environment or use default
+    models_dir = env.get("MODELS_DIR")
+    if not models_dir:
+        # Default to ~/.cache/getllm/models
+        models_dir = Path.home() / ".cache" / "getllm" / "models"
+    else:
+        models_dir = Path(models_dir)
     
-    # Ensure the directory exists
+    # Create directory if it doesn't exist
     models_dir.mkdir(parents=True, exist_ok=True)
     
     return models_dir
@@ -93,11 +97,11 @@ def get_default_model() -> Optional[str]:
     if central_env_path.exists():
         env = dotenv.dotenv_values(central_env_path)
     
-    # If not found in central .env, try local .env
-    if "DEFAULT_MODEL" not in env:
-        local_env_path = Path(__file__).parent.parent / ".env"
-        if local_env_path.exists():
-            env = dotenv.dotenv_values(local_env_path)
+    # Then try to load from local .env if it exists
+    local_env_path = Path(__file__).parent.parent / ".env"
+    if local_env_path.exists():
+        local_env = dotenv.dotenv_values(local_env_path)
+        env.update(local_env)
     
     return env.get("DEFAULT_MODEL")
 

@@ -233,5 +233,7 @@ __all__ = [
     'DEFAULT_HF_MODELS',
     'search_huggingface_models',
     'get_huggingface_models',
-    'update_models_from_huggingface'
+    'update_models_from_huggingface',
+    'load_huggingface_models_from_cache',
+    'load_ollama_models_from_cache'
 ]
