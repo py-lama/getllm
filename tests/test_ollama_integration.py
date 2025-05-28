@@ -210,6 +210,29 @@ class TestOllamaIntegration(unittest.TestCase):
         
         # Verify that the result contains the expected mock response
         self.assertIn("Mock", result)
+        
+    def test_install_ollama_with_bexy_option(self):
+        """Test that the _install_ollama method works when user selects bexy sandbox"""
+        # Import the necessary modules
+        from getllm.ollama_integration import OllamaIntegration
+        
+        # Create a test instance
+        with patch('builtins.input', return_value='3'):
+            with patch('getllm.ollama_integration.OllamaIntegration._install_ollama_bexy') as mock_bexy_install:
+                # Set up the mock to return True
+                mock_bexy_install.return_value = True
+                
+                # Create an instance of OllamaIntegration
+                ollama = OllamaIntegration()
+                
+                # Call the _install_ollama method
+                result = ollama._install_ollama()
+                
+                # Verify that the _install_ollama_bexy method was called
+                mock_bexy_install.assert_called_once()
+                
+                # Verify that the method returns True
+                self.assertTrue(result)
 
 if __name__ == "__main__":
     unittest.main()
