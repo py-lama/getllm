@@ -10,13 +10,12 @@ from typing import List, Dict, Any
 from urllib.parse import urljoin
 import argparse
 import sys
+import chromedriver_autoinstaller
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 
 class OllamaModelsScraper:
@@ -30,9 +29,12 @@ class OllamaModelsScraper:
     
     def _init_driver(self):
         """Initialize and return a Selenium WebDriver"""
+        # Install/update ChromeDriver
+        chromedriver_autoinstaller.install()
+        
         options = Options()
         if self.headless:
-            options.add_argument('--headless')
+            options.add_argument('--headless=new')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--window-size=1920,1080')
@@ -40,10 +42,8 @@ class OllamaModelsScraper:
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-infobars')
         
-        driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
+        # Initialize Chrome WebDriver
+        driver = webdriver.Chrome(options=options)
         return driver
     
     def get_page(self, url: str, wait_for: str = None, timeout: int = 20) -> BeautifulSoup:
