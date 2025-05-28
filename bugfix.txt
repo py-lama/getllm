@@ -1,0 +1,101 @@
+jesli nie pobiera z rejestrow HG i Ollama, to pobiera liste ze stalych url, ktore zostaly prztestowane przy deploymencie
+
+getllm -i
+
+GetLLM Interactive Mode
+Use arrow keys to navigate, Enter to select, or type a command (e.g., install <model>)
+
+? Select an action from the menu: Install model (select from list)
+? Where would you like to get models from? Hugging Face Models (online)
+No Hugging Face models found.
+? Select an action from the menu: List available models
+
+Available models:
+  tinyllama:1.1b            1.1B  TinyLlama 1.1B - szybki, mały model
+  codellama:7b              7B  CodeLlama 7B - kodowanie, Meta
+  wizardcoder:7b-python     7B  WizardCoder 7B Python
+  deepseek-coder:6.7b       6.7B  Deepseek Coder 6.7B
+  codegemma:2b              2B  CodeGemma 2B - Google
+  phi:2.7b                  2.7B  Microsoft Phi-2 2.7B
+  stablelm-zephyr:3b        3B  StableLM Zephyr 3B
+  mistral:7b                7B  Mistral 7B
+  qwen:7b                   7B  Qwen 7B
+  gemma:7b                  7B  Gemma 7B
+  gemma:2b                  2B  Gemma 2B
+? Select an action from the menu: List installed models
+? Select an action from the menu: Search Hugging Face models
+? Enter search term for Hugging Face models: bielik
+Searching for models matching 'bielik' on Hugging Face...
+Error searching Hugging Face models: 401 Client Error: Unauthorized for url: https://huggingface.co/search/models?search=bielik&sort=downloads&filter=gguf
+No models found matching 'bielik'.
+? Select an action from the menu: Generate code (interactive)
+? Enter your code generation prompt: test python
+? Select template: basic
+
+Generating code with model: bielik-custom-1748445853
+Using template: basic
+
+Model bielik-custom-1748445853 not found. Attempting to install it...
+
+⚠️ WARNING: Not enough disk space to install bielik-custom-1748445853
+Available: 3.26 GB, Required: 5.00 GB
+? Do you want to attempt installation anyway? (Not recommended) No
+? Would you like to continue in mock mode instead? Yes
+
+
+
+
+
+
+
+
+jak blad w kodzie to napraw, dopoki nie dziala poprawnie:
+
+
+
+
+ent Error: Unauthorized for url: https://huggingface.co/search/models?search=bielik&sort=downloads&filter=gguf
+No models found matching 'bielik'.
+? Select an action from the menu: Generate code (interactive)
+? Enter your code generation prompt: test python
+? Select template: basic
+
+Generating code with model: bielik-custom-1748445853
+Using template: basic
+
+Model bielik-custom-1748445853 not found. Attempting to install it...
+
+⚠️ WARNING: Not enough disk space to install bielik-custom-1748445853
+Available: 3.26 GB, Required: 5.00 GB
+? Do you want to attempt installation anyway? (Not recommended) No
+? Would you like to continue in mock mode instead? Yes
+
+Continuing in mock mode (no model download required)...
+Generating code with bielik-custom-1748445853 - (0.0s) Sending request to Ollama API with timeout 120s...
+                                                                 
+Generated Python code:
+----------------------------------------
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Sample data (simplified for this example)
+users = ["Alice", "Bob", "Charlie", "David"]
+books = {
+----------------------------------------
+? Save the code to a file? Yes
+
+Code saved to: /home/tom/.getllm/generated_script_20250528_190028.py
+? Run the generated code? Yes
+
+Running the generated code...
+Error running code:   File "/tmp/tmpg5syy_4p.py", line 6
+    books = {
+            ^
+SyntaxError: '{' was never closed
+
+? Select an action from the menu: (Use arrow keys)                                                                              
+
+Cancelled by user
+
+Cancelled or exiting menu.
+[tom@lenovo ~]$ 
