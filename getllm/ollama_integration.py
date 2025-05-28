@@ -94,38 +94,84 @@ class OllamaIntegration:
         # Track the last error that occurred
         self.last_error = None
         self.original_model_specified = model is not None
+        # Check if Ollama is installed
+        self.is_ollama_installed = self._check_ollama_installed()
+        
+    def _check_ollama_installed(self) -> bool:
+        """Check if Ollama is installed on the system."""
+        try:
+            # Try to find the Ollama executable
+            if os.name == 'nt':  # Windows
+                which_cmd = 'where'
+            else:  # Unix/Linux/MacOS
+                which_cmd = 'which'
+                
+            result = subprocess.run(
+                [which_cmd, self.ollama_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False
+            )
+            
+            if result.returncode == 0:
+                logger.info(f"Ollama found at: {result.stdout.strip()}")
+                # Update ollama_path to the full path
+                self.ollama_path = result.stdout.strip()
+                return True
+            else:
+                logger.warning(f"Ollama not found in PATH. Command '{which_cmd} {self.ollama_path}' failed.")
+                return False
+        except Exception as e:
+            logger.error(f"Error checking if Ollama is installed: {e}")
+            return False
 
-    def start_ollama(self) -> None:
-        """Start the Ollama server if it's not already running."""
+    def start_ollama(self) -> bool:
+        """Start the Ollama server if it's not already running.
+        
+        Returns:
+            bool: True if Ollama is running or was started successfully, False otherwise.
+        """
+        # First check if Ollama is installed
+        if not self.is_ollama_installed:
+            logger.error("Ollama is not installed. Please install Ollama first.")
+            print("\nOllama is not installed. Please install Ollama from https://ollama.com")
+            print("If you want to continue without Ollama, use the --mock flag.")
+            return False
+            
         try:
             # Check if Ollama is already running by querying the version
             response = requests.get(self.version_api_url)
             logger.info(f"Ollama is running (version: {response.json().get('version', 'unknown')})")
-            return
+            return True
 
         except requests.exceptions.ConnectionError:
             logger.info("Starting Ollama server...")
-            # Run Ollama in the background
-            self.ollama_process = subprocess.Popen(
-                [self.ollama_path, "serve"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
-            )
-            # Wait for the server to start
-            time.sleep(5)
-
-            # Check if the server actually started
             try:
-                response = requests.get(self.version_api_url)
-                logger.info(f"Ollama server started (version: {response.json().get('version', 'unknown')})")
-            except requests.exceptions.ConnectionError:
-                logger.error("ERROR: Failed to start Ollama server.")
-                if self.ollama_process:
-                    logger.error("Error details:")
-                    out, err = self.ollama_process.communicate(timeout=1)
-                    logger.error(f"STDOUT: {out.decode('utf-8', errors='ignore')}")
-                    logger.error(f"STDERR: {err.decode('utf-8', errors='ignore')}")
-                raise RuntimeError("Failed to start Ollama server")
+                # Run Ollama in the background
+                self.ollama_process = subprocess.Popen(
+                    [self.ollama_path, "serve"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                # Wait for the server to start
+                time.sleep(5)
+
+                # Check if the server actually started
+                try:
+                    response = requests.get(self.version_api_url)
+                    logger.info(f"Ollama server started (version: {response.json().get('version', 'unknown')})")
+                    return True
+                except requests.exceptions.ConnectionError:
+                    logger.error("ERROR: Failed to start Ollama server.")
+                    if self.ollama_process:
+                        logger.error("Error details:")
+                        stderr = self.ollama_process.stderr.read().decode('utf-8')
+                        logger.error(stderr)
+                    return False
+            except Exception as e:
+                logger.error(f"Error starting Ollama: {e}")
+                return False
 
     def stop_ollama(self) -> None:
         """Stop the Ollama server if it was started by this script."""
@@ -221,6 +267,22 @@ class OllamaIntegration:
         Returns:
             True if installation was successful, False otherwise
         """
+        # First check if Ollama is installed
+        if not self.is_ollama_installed:
+            logger.error("Cannot install model: Ollama is not installed")
+            print("\nError: Ollama is not installed. Please install Ollama from https://ollama.com")
+            print("Installation instructions:")
+            print("  - Linux/macOS: curl -fsSL https://ollama.com/install.sh | sh")
+            print("  - Windows: Visit https://ollama.com/download")
+            print("\nIf you want to continue without Ollama, use the --mock flag:")
+            print("  getllm --mock")
+            return False
+            
+        # Check if Ollama server is running
+        if not self.start_ollama():
+            logger.error("Cannot install model: Failed to start Ollama server")
+            return False
+        
         # Check if it's a SpeakLeash model that needs special handling
         if model_name.lower().startswith('speakleash/bielik'):
             print(f"\nDetected SpeakLeash Bielik model: {model_name}")
@@ -654,8 +716,25 @@ def install_ollama_model(model_name: str) -> bool:
     Returns:
         True if installation was successful, False otherwise
     """
+    # Initialize OllamaIntegration
     ollama = OllamaIntegration()
-    ollama.start_ollama()
+    
+    # Check if Ollama is installed
+    if not ollama.is_ollama_installed:
+        logger.error("Cannot install model: Ollama is not installed")
+        print("\nError: Ollama is not installed. Please install Ollama from https://ollama.com")
+        print("Installation instructions:")
+        print("  - Linux/macOS: curl -fsSL https://ollama.com/install.sh | sh")
+        print("  - Windows: Visit https://ollama.com/download")
+        print("\nIf you want to continue without Ollama, use the --mock flag:")
+        print("  getllm --mock")
+        return False
+    
+    # Start Ollama server
+    if not ollama.start_ollama():
+        return False
+        
+    # Install the model
     return ollama.install_model(model_name)
 
 
