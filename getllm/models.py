@@ -276,6 +276,20 @@ def list_installed_models():
         print(f"Error listing installed models: {e}")
         return []
 
+def get_huggingface_models():
+    """
+    Get a list of popular models from Hugging Face.
+    
+    Returns:
+        A list of dictionaries containing model information.
+    """
+    try:
+        # Use the search function with no query to get popular models
+        return search_huggingface_models(query=None, limit=50)
+    except Exception as e:
+        print(f"Error getting Hugging Face models: {e}")
+        return []
+
 def search_huggingface_models(query=None, limit=20):
     """
     Search for models on Hugging Face that match the given query.
@@ -287,55 +301,51 @@ def search_huggingface_models(query=None, limit=20):
     Returns:
         A list of dictionaries containing model information.
     """
-    import requests
-    
     try:
-        # Base URL for the Hugging Face API
-        api_url = "https://huggingface.co/api/models"
-        
-        # Parameters for the API request
-        params = {
-            "limit": limit,
-            "filter": "gguf",  # Filter for GGUF models compatible with Ollama
-            "sort": "downloads",
-            "direction": -1  # Sort by most downloads
-        }
-        
-        # Add search query if provided
+        # Base URL for Hugging Face model search
         if query:
-            params["search"] = query
+            url = f"https://huggingface.co/search/models?search={query}&sort=downloads&filter=gguf"
+        else:
+            # Default to popular GGUF models if no query provided
+            url = "https://huggingface.co/models?sort=downloads&filter=gguf"
         
-        # Make the API request
-        response = requests.get(api_url, params=params)
+        # Fetch the search results page
+        response = requests.get(url)
         response.raise_for_status()
         
-        # Parse the response
-        models_data = response.json()
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Format the results
+        # Find all model cards
+        model_cards = soup.select('article.overview-card')
+        
         results = []
-        for model in models_data:
-            # Extract model information
-            model_id = model.get("id", "")
-            model_name = model_id.split("/")[-1] if "/" in model_id else model_id
+        for card in model_cards[:limit]:
+            # Extract model ID (username/model_name)
+            model_id_elem = card.select_one('a.header-link')
+            if not model_id_elem:
+                continue
             
-            # Get the model size if available
-            size = "Unknown"
-            for tag in model.get("tags", []):
-                if "q4_k_m" in tag or "q4_0" in tag or "q5_k_m" in tag or "q8_0" in tag:
-                    size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', model.get("description", ""))
-                    if size_match:
-                        size = size_match.group(1)
-                    break
+            model_id = model_id_elem.text.strip()
             
-            # Add the model to the results
+            # Extract description
+            desc_elem = card.select_one('p.description')
+            description = desc_elem.text.strip() if desc_elem else ""
+            
+            # Extract downloads count
+            downloads_elem = card.select_one('div.flex.flex-col span.whitespace-nowrap')
+            downloads = downloads_elem.text.strip() if downloads_elem else ""
+            
+            # Extract last updated time
+            updated_elem = card.select_one('div.metadata time')
+            updated = updated_elem.text.strip() if updated_elem else ""
+            
             results.append({
-                "name": model_id,  # Full model ID (e.g., "SpeakLeash/bielik-1.5b-v3.0-instruct-gguf")
-                "size": size,
-                "desc": model.get("description", "")[:100] + ("..." if len(model.get("description", "")) > 100 else ""),
-                "downloads": model.get("downloads", 0),
-                "likes": model.get("likes", 0),
-                "tags": model.get("tags", [])
+                'id': model_id,
+                'description': description,
+                'downloads': downloads,
+                'updated': updated,
+                'source': 'huggingface'
             })
         
         return results

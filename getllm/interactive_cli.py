@@ -22,16 +22,149 @@ Use arrow keys to navigate, Enter to select, or type a command (e.g., install <m
 """
 
 def choose_model(action_desc, callback):
+    # First ask the user which source they want to use
+    source = questionary.select(
+        "Where would you like to get models from?",
+        choices=[
+            "Ollama Library (predefined models)",
+            "Installed Models (local)",
+            "Hugging Face Models (online)",
+            "Search by name (all sources)"
+        ]
+    ).ask()
+    
+    if not source:
+        print("Selection cancelled.")
+        return
+    
+    # Get predefined models from models.json
     models_list = models.get_models()
-    choices = [
-        questionary.Choice(
-            title=f"{m.get('name','-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}",
-            value=m['name']
-        ) for m in models_list
-    ]
+    
+    # Get installed models from Ollama
+    from getllm.ollama_integration import get_ollama_integration
+    ollama = get_ollama_integration()
+    
+    # Only try to get installed models if Ollama is installed
+    installed_models = []
+    if ollama.is_ollama_installed:
+        try:
+            installed_models = ollama.list_installed_models()
+        except Exception as e:
+            print(f"Warning: Could not get installed models: {e}")
+    
+    # Create a set of predefined model names for quick lookup
+    predefined_model_names = {m['name'] for m in models_list}
+    
+    # Prepare Hugging Face models
+    hf_models = []
+    try:
+        from getllm.models import get_huggingface_models
+        hf_models = get_huggingface_models()[:10]  # Get first 10 HF models
+    except Exception as e:
+        print(f"Warning: Could not get Hugging Face models: {e}")
+    
+    choices = []
+    
+    if source == "Search by name (all sources)":
+        # Ask for search term
+        search_term = questionary.text("Enter the first few letters or name of the model:").ask()
+        if not search_term:
+            print("Search cancelled.")
+            return
+        
+        search_term = search_term.lower()
+        
+        # Filter models from all sources based on search term
+        filtered_predefined = [m for m in models_list if search_term in m['name'].lower()]
+        filtered_installed = [m for m in installed_models if search_term in m.get('name', '').lower()]
+        filtered_hf = [m for m in hf_models if search_term in m.get('id', '').lower()]
+        
+        # Add predefined models that match
+        if filtered_predefined:
+            choices.append(questionary.Separator("--- Ollama Library Models ---"))
+            for m in filtered_predefined:
+                choices.append(
+                    questionary.Choice(
+                        title=f"{m.get('name','-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}",
+                        value=m['name']
+                    )
+                )
+        
+        # Add installed models that match
+        if filtered_installed:
+            choices.append(questionary.Separator("--- Installed Models ---"))
+            for m in filtered_installed:
+                model_name = m.get('name', '')
+                size = m.get('size', '')
+                choices.append(
+                    questionary.Choice(
+                        title=f"{model_name:<25} {size}  [Installed model]",
+                        value=model_name
+                    )
+                )
+        
+        # Add Hugging Face models that match
+        if filtered_hf:
+            choices.append(questionary.Separator("--- Hugging Face Models ---"))
+            for m in filtered_hf:
+                model_id = m.get('id', '')
+                choices.append(
+                    questionary.Choice(
+                        title=f"{model_id:<25} [Hugging Face model]",
+                        value=model_id
+                    )
+                )
+    
+    elif source == "Ollama Library (predefined models)":
+        # Show top 10 predefined models
+        top_models = models_list[:10]
+        for m in top_models:
+            choices.append(
+                questionary.Choice(
+                    title=f"{m.get('name','-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}",
+                    value=m['name']
+                )
+            )
+    
+    elif source == "Installed Models (local)":
+        # Show all installed models
+        if installed_models:
+            for m in installed_models:
+                model_name = m.get('name', '')
+                size = m.get('size', '')
+                choices.append(
+                    questionary.Choice(
+                        title=f"{model_name:<25} {size}  [Installed model]",
+                        value=model_name
+                    )
+                )
+        else:
+            print("No installed models found.")
+            return
+    
+    elif source == "Hugging Face Models (online)":
+        # Show top 10 Hugging Face models
+        if hf_models:
+            for m in hf_models:
+                model_id = m.get('id', '')
+                choices.append(
+                    questionary.Choice(
+                        title=f"{model_id:<25} [Hugging Face model]",
+                        value=model_id
+                    )
+                )
+        else:
+            print("No Hugging Face models found.")
+            return
+    
+    if not choices:
+        print("No models found matching your criteria.")
+        return
+    
     answer = questionary.select(
         f"Select model to {action_desc}:", choices=choices
     ).ask()
+    
     if answer:
         callback(answer)
     else:

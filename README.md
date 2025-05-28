@@ -1,5 +1,7 @@
 # getllm
 
+![getllm-interactive.png](getllm-interactive.png)
+
 ## PyLama Ecosystem Navigation
 
 | Project | Description | Links |
