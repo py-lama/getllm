@@ -1,6 +1,6 @@
 {
-  "source": "ollama.com",
-  "scraped_at": "2025-05-28 22:07:20",
-  "total_models": 0,
-  "models": []
+  "models": [],
+  "count": 0,
+  "source": "ollama",
+  "scraped_at": "2025-05-28 22:12:43"
 }
