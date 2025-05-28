@@ -99,115 +99,166 @@ class OllamaModelsScraper:
             }
             
             try:
-                # Get model name - try multiple possible selectors
-                name_selectors = ['h3', '.model-name', '.name', 'a[href^="/library/"] h3']
+                # Get the card's HTML for debugging
+                try:
+                    card_html = card_element.get_attribute('outerHTML')
+                    if card_html and len(card_html) > 500:  # Only log if we have a reasonable amount of HTML
+                        with open('debug_card.html', 'w', encoding='utf-8') as f:
+                            f.write(card_html)
+                        print("📝 Saved card HTML to debug_card.html")
+                except Exception as e:
+                    print(f"⚠️ Could not get card HTML: {str(e)}")
+                
+                # Get model name - try multiple possible selectors and strategies
+                name = None
+                
+                # Strategy 1: Try to find name in common elements
+                name_selectors = [
+                    'h3', 'h2', 'h4',  # Common heading elements
+                    'a[href^="/library/"]',  # Links to model pages
+                    'div[class*="name"], span[class*="name"]',  # Elements with 'name' in class
+                    'div:first-child',  # First child element
+                    'a:first-child'  # First link
+                ]
+                
                 for selector in name_selectors:
                     try:
-                        name_elem = card_element.find_element(By.CSS_SELECTOR, selector)
-                        if name_elem:
-                            model_info["name"] = name_elem.text.strip()
+                        elements = card_element.find_elements(By.CSS_SELECTOR, selector)
+                        for elem in elements:
+                            text = elem.text.strip()
+                            if text and len(text) > 2 and len(text) < 100:  # Reasonable length for a name
+                                name = text
+                                break
+                        if name:
                             break
                     except:
                         continue
                 
+                # Strategy 2: If no name found, try to extract from URL
+                if not name or name == "Unknown":
+                    try:
+                        link = card_element.find_element(By.CSS_SELECTOR, 'a[href^="/library/"]')
+                        if link:
+                            href = link.get_attribute('href')
+                            if href and '/library/' in href:
+                                name = href.split('/library/')[-1].split('/')[0].split('?')[0]
+                                if name:
+                                    name = name.replace('-', ' ').title()
+                    except:
+                        pass
+                
+                # Strategy 3: Try to find the largest text element
+                if not name or name == "Unknown":
+                    try:
+                        all_texts = [e.text.strip() for e in card_element.find_elements(By.XPATH, './/*') if e.text.strip()]
+                        if all_texts:
+                            # Sort by length and get the longest reasonable text
+                            all_texts.sort(key=len, reverse=True)
+                            for text in all_texts:
+                                if 3 < len(text) < 100 and ' ' not in text:  # Likely a model name
+                                    name = text
+                                    break
+                    except:
+                        pass
+                
+                if name:
+                    model_info["name"] = name
+                
                 # Get model URL
                 try:
-                    link_selector = 'a[href^="/library/"]'
-                    link_elem = card_element.find_element(By.CSS_SELECTOR, link_selector)
-                    if link_elem:
-                        href = link_elem.get_attribute('href')
+                    link = card_element.find_element(By.CSS_SELECTOR, 'a[href^="/library/"]')
+                    if link:
+                        href = link.get_attribute('href')
                         if href:
                             model_info["url"] = href
-                            # Extract model name from URL if name not found
+                            # If we still don't have a name, try to get it from the URL
                             if model_info["name"] == "Unknown" and '/library/' in href:
-                                model_info["name"] = href.split('/library/')[-1].split('/')[0]
+                                model_name = href.split('/library/')[-1].split('/')[0].split('?')[0]
+                                if model_name:
+                                    model_info["name"] = model_name.replace('-', ' ').title()
                 except:
                     pass
                 
-                # Get description
+                # Get description - look for a medium-length text block
                 try:
-                    desc_elems = card_element.find_elements(By.CSS_SELECTOR, 'p, .description, .model-description')
-                    if desc_elems:
-                        model_info["description"] = desc_elems[0].text.strip()
-                except:
-                    pass
-                
-                # Get metadata (pulls, size, updated)
-                try:
-                    meta_selectors = [
-                        'div.text-sm.text-gray-500',
-                        '.metadata',
-                        '.model-meta',
-                        'div:has(> svg) + span',
-                        'div.flex.items-center.text-sm.text-gray-500'
-                    ]
+                    # Try to find a paragraph or div with reasonable length text
+                    all_texts = []
+                    for elem in card_element.find_elements(By.XPATH, './/p | .//div'):
+                        text = elem.text.strip()
+                        if 20 < len(text) < 500:  # Reasonable length for a description
+                            all_texts.append(text)
                     
-                    for selector in meta_selectors:
+                    if all_texts:
+                        # Prefer longer descriptions, but not too long
+                        all_texts.sort(key=len)
+                        model_info["description"] = all_texts[-1]
+                except:
+                    pass
+                
+                # Get metadata (pulls, size, updated) - look for common patterns
+                try:
+                    # Get all text content and look for patterns
+                    full_text = card_element.text.lower()
+                    
+                    # Look for pull/download count
+                    import re
+                    pull_match = re.search(r'(\d+[\d,]*)\s*(pulls?|downloads?)', full_text)
+                    if pull_match:
+                        model_info["pulls"] = pull_match.group(1).replace(',', '')
+                    
+                    # Look for size
+                    size_match = re.search(r'(\d+\.?\d*)\s*(GB|MB|KB)', full_text)
+                    if size_match:
+                        model_info["size"] = f"{size_match.group(1)} {size_match.group(2)}"
+                    
+                    # Look for update/date information
+                    date_match = re.search(r'(updated|last)\s*(?:on|:)?\s*([a-z0-9,\s]+(?:ago|today|yesterday|\d{4}))', full_text)
+                    if date_match:
+                        model_info["updated"] = date_match.group(2).strip()
+                except:
+                    pass
+                
+                # Get tags - look for small clickable elements or badges
+                try:
+                    tag_candidates = card_element.find_elements(By.CSS_SELECTOR, 
+                        'span, div, a, button, .tag, .badge, .chip, [class*="tag"], [class*="badge"]')
+                    
+                    for tag in tag_candidates:
                         try:
-                            meta_elems = card_element.find_elements(By.CSS_SELECTOR, selector)
-                            if meta_elems:
-                                metadata = [elem.text.strip().lower() for elem in meta_elems if elem.text.strip()]
-                                
-                                # Extract pulls/downloads
-                                pulls = next((m for m in metadata if any(x in m for x in ['pull', 'download'])), None)
-                                if pulls:
-                                    model_info["pulls"] = pulls
-                                
-                                # Extract size
-                                size = next((m for m in metadata if any(x in m for x in ['gb', 'mb', 'kb'])), None)
-                                if size:
-                                    model_info["size"] = size
-                                
-                                # Extract last updated
-                                updated = next((m for m in metadata if any(x in m for x in ['ago', 'updated', 'last'])), None)
-                                if updated:
-                                    model_info["updated"] = updated
-                                
-                                if any([pulls, size, updated]):
-                                    break
+                            tag_text = tag.text.strip()
+                            if (tag_text and 
+                                len(tag_text) < 30 and 
+                                tag_text.lower() not in ['ollama', 'model', 'library', ''] and
+                                tag_text != model_info["name"] and
+                                not tag_text.isdigit() and
+                                not any(x in tag_text.lower() for x in ['pull', 'download', 'updated', 'last', 'gb', 'mb', 'kb'])):
+                                model_info["tags"].append(tag_text)
                         except:
                             continue
-                except:
-                    pass
-                
-                # Get tags
-                try:
-                    tag_selectors = [
-                        'span.bg-gray-100, span.inline-flex',
-                        '.tag, .model-tag',
-                        'span:not([class]):not([id])',
-                        'div:has(> svg) + span'
-                    ]
                     
-                    for selector in tag_selectors:
-                        try:
-                            tag_elems = card_element.find_elements(By.CSS_SELECTOR, selector)
-                            if tag_elems:
-                                for tag in tag_elems:
-                                    try:
-                                        tag_text = tag.text.strip()
-                                        if tag_text and tag_text.lower() not in ['ollama', 'model', 'library', '']:
-                                            model_info["tags"].append(tag_text)
-                                    except:
-                                        continue
-                                if model_info["tags"]:  # If we found some tags, no need to try other selectors
-                                    break
-                        except:
-                            continue
-                except:
-                    pass
+                    # Remove duplicates while preserving order
+                    seen = set()
+                    model_info["tags"] = [x for x in model_info["tags"] if not (x in seen or seen.add(x))]
+                    
+                except Exception as e:
+                    print(f"⚠️ Error extracting tags: {str(e)}")
                 
                 # Generate ollama pull command if we have a valid name
                 if model_info["name"] != "Unknown":
-                    model_info["ollama_command"] = f"ollama pull {model_info['name']}"
+                    model_name = model_info["name"].lower().replace(' ', ':')
+                    model_info["ollama_command"] = f"ollama pull {model_name}"
                 
             except Exception as e:
-                print(f"⚠️ Warning in model info extraction: {str(e)[:100]}...")
+                print(f"⚠️ Warning in model info extraction: {str(e)}")
+                import traceback
+                traceback.print_exc()
                 
             return model_info
             
         except Exception as e:
-            print(f"⚠️ Error extracting model info: {str(e)[:100]}...")
+            print(f"⚠️ Error extracting model info: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return None
             
         except Exception as e:
@@ -466,6 +517,8 @@ def main():
                         help='Search for specific models')
     parser.add_argument('--category', '-c', type=str,
                         help='Filter by category')
+    parser.add_argument('--limit', '-l', type=int, default=None,
+                        help='Limit the number of models to process (for testing)')
 
     args = parser.parse_args()
 
@@ -479,8 +532,15 @@ def main():
             print(f"{i}. {model['name']} - {model['description'][:100]}...")
             print(f"   Command: {model['ollama_command']}")
     else:
-        # Full scrape mode
+        # Full scrape mode with optional limit
         models = scraper.scrape_all_models(detailed=args.detailed)
+        
+        # Apply limit if specified
+        if args.limit and args.limit > 0 and len(models) > args.limit:
+            print(f"\nℹ️ Limiting to {args.limit} models as requested")
+            models = models[:args.limit]
+            
+        # Save the results
         scraper.save_to_json(models, args.output)
 
         # Show summary
