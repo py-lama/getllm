@@ -20,9 +20,46 @@ metadata_manager = ModelMetadataManager()
 
 # Define default models
 DEFAULT_HF_MODELS = [
-    "gpt2",
-    "bert-base-uncased",
-    "distilgpt2"
+    {
+        'id': 'TheBloke/Llama-2-7B-Chat-GGUF',
+        'name': 'llama-2-7b-chat',
+        'size': '7B',
+        'description': 'Llama 2 7B Chat model in GGUF format',
+        'source': 'huggingface',
+        'format': 'gguf'
+    },
+    {
+        'id': 'bielik-ai/Bielik-13B-v0.1-GGUF',
+        'name': 'bielik-13b-v0.1',
+        'size': '13B',
+        'description': 'Bielik 13B v0.1 model in GGUF format',
+        'source': 'huggingface',
+        'format': 'gguf'
+    },
+    {
+        'id': 'bielik-ai/Bielik-7B-v0.1-GGUF',
+        'name': 'bielik-7b-v0.1',
+        'size': '7B',
+        'description': 'Bielik 7B v0.1 model in GGUF format',
+        'source': 'huggingface',
+        'format': 'gguf'
+    },
+    {
+        'id': 'TheBloke/Mistral-7B-Instruct-v0.2-GGUF',
+        'name': 'mistral-7b-instruct-v0.2',
+        'size': '7B',
+        'description': 'Mistral 7B Instruct v0.2 model in GGUF format',
+        'source': 'huggingface',
+        'format': 'gguf'
+    },
+    {
+        'id': 'TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF',
+        'name': 'mixtral-8x7b-instruct-v0.1',
+        'size': '8x7B',
+        'description': 'Mixtral 8x7B Instruct v0.1 model in GGUF format',
+        'source': 'huggingface',
+        'format': 'gguf'
+    }
 ]
 
 def get_models() -> List[Dict[str, Any]]:
@@ -126,6 +163,50 @@ def update_models_metadata() -> bool:
         print(f"Error updating models metadata: {e}")
         return False
 
+def search_huggingface_models(query: str = None, limit: int = 20) -> List[Dict[str, Any]]:
+    """
+    Search for models on Hugging Face based on a query string.
+    
+    Args:
+        query: Search query string
+        limit: Maximum number of models to return
+        
+    Returns:
+        List of model dictionaries matching the query
+    """
+    try:
+        # First try to use the huggingface_manager to search for models
+        models_list = huggingface_manager.search_models(query=query, limit=limit)
+        
+        # If no models found or there was an error, fall back to DEFAULT_HF_MODELS
+        if not models_list:
+            # If query is provided, filter the default models
+            if query:
+                query = query.lower()
+                models_list = [
+                    model for model in DEFAULT_HF_MODELS
+                    if (query in model.get('name', '').lower() or
+                        query in model.get('id', '').lower() or
+                        query in model.get('description', '').lower())
+                ]
+            else:
+                # If no query, return all default models
+                models_list = DEFAULT_HF_MODELS[:limit]
+                
+        return models_list
+    except Exception as e:
+        print(f"Error searching Hugging Face models: {e}")
+        # Fall back to DEFAULT_HF_MODELS
+        if query:
+            query = query.lower()
+            return [
+                model for model in DEFAULT_HF_MODELS
+                if (query in model.get('name', '').lower() or
+                    query in model.get('id', '').lower() or
+                    query in model.get('description', '').lower())
+            ][:limit]
+        return DEFAULT_HF_MODELS[:limit]
+
 def load_huggingface_models_from_cache() -> List[Dict]:
     """
     Load Hugging Face models from cache.
@@ -162,24 +243,6 @@ def load_ollama_models_from_cache() -> List[Dict]:
         print(f"Error loading Ollama models from cache: {e}")
         return []
 
-def search_huggingface_models(query: str = None, limit: int = 20) -> List[Dict[str, Any]]:
-    """
-    Search for models on Hugging Face based on a query string.
-    
-    Args:
-        query: Search query string
-        limit: Maximum number of models to return
-        
-    Returns:
-        List of model dictionaries matching the query
-    """
-    try:
-        # Use the huggingface_manager to search for models
-        return huggingface_manager.search_models(query=query, limit=limit)
-    except Exception as e:
-        print(f"Error searching Hugging Face models: {e}")
-        return []
-
 def get_huggingface_models(limit: int = 20) -> List[Dict[str, Any]]:
     """
     Get available models from Hugging Face.
@@ -191,10 +254,16 @@ def get_huggingface_models(limit: int = 20) -> List[Dict[str, Any]]:
         List of model dictionaries
     """
     try:
-        return huggingface_manager.get_available_models()[:limit]
+        # First try to get models from the huggingface_manager
+        models = huggingface_manager.get_available_models()
+        if models:
+            return models[:limit]
+        # Fall back to DEFAULT_HF_MODELS if no models found
+        return DEFAULT_HF_MODELS[:limit]
     except Exception as e:
         print(f"Error getting Hugging Face models: {e}")
-        return []
+        # Fall back to DEFAULT_HF_MODELS in case of error
+        return DEFAULT_HF_MODELS[:limit]
 
 def update_models_from_huggingface(query: str = None, limit: int = 20) -> bool:
     """
