@@ -215,24 +215,26 @@ class TestOllamaIntegration(unittest.TestCase):
         """Test that the _install_ollama method works when user selects bexy sandbox"""
         # Import the necessary modules
         from getllm.ollama_integration import OllamaIntegration
+        import questionary
         
-        # Create a test instance
+        # Create a test instance with patched methods
         with patch('builtins.input', return_value='3'):
-            with patch('getllm.ollama_integration.OllamaIntegration._install_ollama_bexy') as mock_bexy_install:
-                # Set up the mock to return True
-                mock_bexy_install.return_value = True
-                
-                # Create an instance of OllamaIntegration
-                ollama = OllamaIntegration()
-                
-                # Call the _install_ollama method
-                result = ollama._install_ollama()
-                
-                # Verify that the _install_ollama_bexy method was called
-                mock_bexy_install.assert_called_once()
-                
-                # Verify that the method returns True
-                self.assertTrue(result)
+            with patch('getllm.ollama_integration.OllamaIntegration._install_ollama_bexy', return_value=True) as mock_bexy_install:
+                with patch('builtins.print'):
+                    # Mock questionary import to return False
+                    with patch('importlib.import_module', side_effect=ImportError):
+                        # Create an instance of OllamaIntegration
+                        ollama = OllamaIntegration()
+                        ollama.is_ollama_installed = False  # Force installation path
+                        
+                        # Call the _install_ollama method
+                        result = ollama._install_ollama()
+                        
+                        # Verify that the _install_ollama_bexy method was called
+                        mock_bexy_install.assert_called_once()
+                        
+                        # Verify that the method returns True
+                        self.assertTrue(result)
 
 if __name__ == "__main__":
     unittest.main()

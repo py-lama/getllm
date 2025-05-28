@@ -115,7 +115,7 @@ update-version:
 	@python ../scripts/update_version.py
 
 # Publish package to PyPI
-publish: setup
+publish: setup update-version
 	@echo "Building and publishing package to PyPI automatically..."
 	@. venv/bin/activate && python build_and_publish.py
 
