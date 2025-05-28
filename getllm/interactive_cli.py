@@ -360,7 +360,46 @@ def interactive_shell(mock_mode=False):
                 ]
                 
                 if not filtered_models:
-                    print(f"No models found matching '{query}'.")
+                    print(f"No models found in Ollama library matching '{query}'. Searching Hugging Face GGUF models...")
+                    try:
+                        from getllm.models import search_huggingface_models
+                        hf_models = search_huggingface_models(query=query, limit=20)
+                        if hf_models:
+                            print(f"Found {len(hf_models)} Hugging Face GGUF models matching '{query}'.")
+                            # Combine Ollama and Hugging Face models
+                            all_models = filtered_models + hf_models
+                            # Create choices for the questionary select
+                            choices = []
+                            for m in all_models:
+                                if isinstance(m, dict) and 'name' in m:
+                                    choices.append(questionary.Choice(
+                                        title=f"{m['name']:<25} {m.get('size', ''):<10} {m.get('desc', '')}",
+                                        value=m['name']
+                                    ))
+                                else:
+                                    choices.append(questionary.Choice(
+                                        title=f"{m.get('name', m.get('id', '')):<25} {m.get('size', ''):<10} [HuggingFace] {m.get('description', '')}",
+                                        value=m.get('name', m.get('id', ''))
+                                    ))
+                            # Add a cancel option
+                            choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
+                            
+                            # Ask the user to select a model
+                            selected_model = questionary.select(
+                                "Select a model to install:",
+                                choices=choices
+                            ).ask()
+                            
+                            # If user selected Cancel, return early
+                            if selected_model and selected_model != "__CANCEL__":
+                                # Ask if the user wants to install this model now?
+                                install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
+                                if install_now:
+                                    models.install_model(selected_model)
+                        else:
+                            print(f"No Hugging Face GGUF models found matching '{query}'.")
+                    except Exception as e:
+                        print(f"Error searching Hugging Face models: {e}")
                 else:
                     # Create choices for the questionary select
                     choices = []
@@ -369,7 +408,7 @@ def interactive_shell(mock_mode=False):
                             title=f"{m['name']:<25} {m.get('size', ''):<10} {m.get('desc', '')}",
                             value=m['name']
                         ))
-                    
+
                     # Add a cancel option
                     choices.append(questionary.Choice(title="Cancel", value="__CANCEL__"))
                     
@@ -381,13 +420,12 @@ def interactive_shell(mock_mode=False):
                     
                     # If user selected Cancel, return early
                     if selected_model and selected_model != "__CANCEL__":
-                        # Ask if the user wants to install the model
+                        # Ask if the user wants to install this model now?
                         install_now = questionary.confirm("Do you want to install this model now?", default=True).ask()
                         if install_now:
                             models.install_model(selected_model)
         elif args[0] == "update-hf":
             # Update models from Hugging Face
-            from getllm.models import update_models_from_huggingface, update_huggingface_models_cache
             print("Updating models from Hugging Face...")
             # First update the cache
             update_huggingface_models_cache()
