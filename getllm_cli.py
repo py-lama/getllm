@@ -296,8 +296,13 @@ def main():
         if args.search:
             # Search for models on Hugging Face
             print(f"Searching for models matching '{args.search}' on Hugging Face...")
-            # Skip Ollama check if in mock mode
-            selected_model = interactive_model_search(args.search, check_ollama=(not args.mock))
+            
+            # If in mock mode, skip Ollama checks entirely
+            if args.mock:
+                print("\nRunning in mock mode - Ollama checks bypassed")
+                selected_model = interactive_model_search(args.search, check_ollama=False)
+            else:
+                selected_model = interactive_model_search(args.search, check_ollama=True)
             if selected_model:
                 # Ask if the user wants to install the model
                 import questionary
