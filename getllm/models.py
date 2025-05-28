@@ -240,9 +240,145 @@ def load_models_from_json(file_path=None):
     
     return DEFAULT_MODELS
 
+def update_models_metadata():
+    """
+    Create and update a combined models metadata file that contains information
+    about both Hugging Face and Ollama models.
+    
+    This function loads models from both Hugging Face and Ollama caches and
+    combines them into a single metadata file for easier access.
+    
+    Returns:
+        True if successful, False otherwise.
+    """
+    try:
+        # Get models from both sources
+        hf_models = load_huggingface_models_from_cache()
+        ollama_models = load_ollama_models_from_cache()
+        
+        # If no cached models, try to fetch them
+        if not hf_models:
+            print("No Hugging Face models in cache, using default models...")
+            hf_models = DEFAULT_HF_MODELS
+        
+        if not ollama_models:
+            print("No Ollama models in cache, using default models...")
+            ollama_models = DEFAULT_MODELS
+            
+        # Create a combined metadata dictionary
+        metadata = {}
+        
+        # Add Hugging Face models
+        for model in hf_models:
+            model_id = model.get('id') or model.get('name')
+            if not model_id:
+                continue
+                
+            metadata[model_id] = {
+                'name': model.get('name', model_id),
+                'source': 'huggingface',
+                'description': model.get('description', ''),
+                'size': model.get('size', 'Unknown'),
+                'downloads': model.get('downloads', ''),
+                'url': model.get('url', f"https://huggingface.co/{model_id}"),
+                'metadata': model.get('metadata', {})
+            }
+        
+        # Add Ollama models
+        for model in ollama_models:
+            model_name = model.get('name')
+            if not model_name:
+                continue
+                
+            metadata[model_name] = {
+                'name': model_name,
+                'source': 'ollama',
+                'description': model.get('desc', ''),
+                'size': model.get('size', 'Unknown'),
+                'url': model.get('url', ''),
+                'metadata': model.get('metadata', {})
+            }
+        
+        # Save the combined metadata to a file
+        metadata_path = get_models_metadata_path()
+        os.makedirs(os.path.dirname(metadata_path), exist_ok=True)
+        with open(metadata_path, 'w') as f:
+            json.dump(metadata, f, indent=2)
+            
+        print(f"Successfully updated models metadata with {len(metadata)} models.")
+        return True
+    
+    except Exception as e:
+        print(f"Error updating models metadata: {e}")
+        return False
+
+def get_model_metadata(model_name):
+    """
+    Get metadata for a specific model.
+    
+    Args:
+        model_name: The name of the model to get metadata for.
+        
+    Returns:
+        A dictionary containing model metadata, or None if not found.
+    """
+    try:
+        # Try to load from metadata file first
+        metadata_path = get_models_metadata_path()
+        if os.path.exists(metadata_path):
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+                if model_name in metadata:
+                    return metadata[model_name]
+        
+        # If not found, check Hugging Face models
+        hf_models = load_huggingface_models_from_cache()
+        for model in hf_models:
+            if model.get('id') == model_name or model.get('name') == model_name:
+                return {
+                    'name': model.get('name', model_name),
+                    'source': 'huggingface',
+                    'description': model.get('description', ''),
+                    'size': model.get('size', 'Unknown'),
+                    'downloads': model.get('downloads', ''),
+                    'url': model.get('url', f"https://huggingface.co/{model_name}"),
+                    'metadata': model.get('metadata', {})
+                }
+        
+        # If not found, check Ollama models
+        ollama_models = load_ollama_models_from_cache()
+        for model in ollama_models:
+            if model.get('name') == model_name:
+                return {
+                    'name': model_name,
+                    'source': 'ollama',
+                    'description': model.get('desc', ''),
+                    'size': model.get('size', 'Unknown'),
+                    'url': model.get('url', ''),
+                    'metadata': model.get('metadata', {})
+                }
+        
+        return None
+    
+    except Exception as e:
+        print(f"Error getting model metadata: {e}")
+        return None
+
 def get_models():
-    models = load_models_from_json()
-    return models
+    """
+    Get a list of available models from the models.json file or default list.
+    Also updates the models metadata file if needed.
+    
+    Returns:
+        A list of dictionaries containing model information.
+    """
+    # Update models metadata in the background (don't wait for it)
+    try:
+        update_models_metadata()
+    except Exception as e:
+        print(f"Warning: Could not update models metadata: {e}")
+    
+    return load_models_from_json()
 
 def install_model(model_name):
     """
@@ -352,9 +488,32 @@ DEFAULT_HF_MODELS = [
     }
 ]
 
-# Path to the HF models cache file
+# Paths to the models cache files
 def get_hf_models_cache_path():
     return os.path.join(os.path.dirname(__file__), 'hf_models.json')
+
+def get_ollama_models_cache_path():
+    return os.path.join(os.path.dirname(__file__), 'ollama_models.json')
+
+def get_models_metadata_path():
+    return os.path.join(os.path.dirname(__file__), 'models_metadata.json')
+
+def load_huggingface_models_from_cache():
+    """
+    Load Hugging Face models from the cache file.
+    
+    Returns:
+        A list of Hugging Face models, or an empty list if the cache file doesn't exist or is invalid.
+    """
+    try:
+        cache_path = get_hf_models_cache_path()
+        if os.path.exists(cache_path):
+            with open(cache_path, 'r') as f:
+                return json.load(f)
+        return []
+    except Exception as e:
+        print(f"Error loading Hugging Face models from cache: {e}")
+        return []
 
 def get_huggingface_models():
     """
@@ -365,17 +524,25 @@ def get_huggingface_models():
         A list of dictionaries containing model information.
     """
     # Try to load from cache file first
-    cache_path = get_hf_models_cache_path()
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, 'r') as f:
-                cached_models = json.load(f)
-            if cached_models and len(cached_models) > 0:
-                return cached_models
-        except Exception as e:
-            print(f"Warning: Could not load HF models from cache: {e}")
+    cached_models = load_huggingface_models_from_cache()
+    if cached_models and len(cached_models) > 0:
+        return cached_models
     
     # Fall back to hardcoded list
+    # Ensure all DEFAULT_HF_MODELS have metadata and name fields
+    for model in DEFAULT_HF_MODELS:
+        if 'metadata' not in model:
+            model['metadata'] = {
+                'description': model.get('description', ''),
+                'downloads': model.get('downloads', ''),
+                'updated': model.get('updated', ''),
+                'url': f"https://huggingface.co/{model['id']}",
+                'size': model.get('size', 'Unknown'),
+                'source': 'huggingface'
+            }
+        if 'name' not in model:
+            model['name'] = model['id']
+    
     return DEFAULT_HF_MODELS
 
 def search_huggingface_models(query=None, limit=20):
@@ -400,23 +567,46 @@ def search_huggingface_models(query=None, limit=20):
         
         # Filter models by query
         query = query.lower()
-        filtered_models = [
-            model for model in all_models 
-            if query in model['id'].lower() or 
-               query in model.get('description', '').lower()
-        ]
+        filtered_models = []
+        
+        # Search in multiple fields
+        for model in all_models:
+            # Check in id/name
+            if query in model.get('id', '').lower() or query in model.get('name', '').lower():
+                filtered_models.append(model)
+                continue
+                
+            # Check in description
+            if query in model.get('description', '').lower():
+                filtered_models.append(model)
+                continue
+                
+            # Check in metadata
+            metadata = model.get('metadata', {})
+            if metadata and any(query in str(v).lower() for v in metadata.values() if v):
+                filtered_models.append(model)
+                continue
         
         # If we found models in the cache/hardcoded list, return them
         if filtered_models:
             return filtered_models[:limit]
         
-        # If no models found in cache/hardcoded list but we have a specific query for "bielik",
-        # return the predefined Bielik models from DEFAULT_HF_MODELS
-        if query == "bielik":
-            bielik_models = [
-                model for model in DEFAULT_HF_MODELS 
-                if 'bielik' in model['id'].lower()
-            ]
+        # Special handling for 'meta' query - look for Meta AI models
+        if query == 'meta':
+            meta_models = []
+            for model in all_models:
+                desc = model.get('description', '').lower()
+                if 'meta' in desc and ('ai' in desc or 'llama' in desc):
+                    meta_models.append(model)
+            if meta_models:
+                return meta_models[:limit]
+        
+        # Special handling for 'biel' query - look for Bielik models
+        if 'biel' in query:
+            bielik_models = []
+            for model in all_models:
+                if 'bielik' in model.get('id', '').lower() or 'bielik' in model.get('name', '').lower():
+                    bielik_models.append(model)
             if bielik_models:
                 return bielik_models[:limit]
         
@@ -455,12 +645,62 @@ def search_huggingface_models(query=None, limit=20):
                 downloads_elem = card.select_one('div.flex.flex-col span.whitespace-nowrap')
                 downloads = downloads_elem.text.strip() if downloads_elem else ""
                 
-                results.append({
-                    'id': model_id,
+                # Extract model URL
+                model_url = None
+                if model_id_elem and 'href' in model_id_elem.attrs:
+                    href = model_id_elem['href']
+                    if href.startswith('/'):
+                        model_url = f"https://huggingface.co{href}"
+                    elif href.startswith('http'):
+                        model_url = href
+                
+                # Extract size from description if available
+                size = "Unknown"
+                size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', description)
+                if size_match:
+                    size = size_match.group(1)
+                
+                # Create metadata
+                metadata = {
                     'description': description,
                     'downloads': downloads,
+                    'url': model_url,
+                    'size': size,
                     'source': 'huggingface'
+                }
+                
+                results.append({
+                    'id': model_id,
+                    'name': model_id,
+                    'description': description,
+                    'downloads': downloads,
+                    'url': model_url,
+                    'size': size,
+                    'source': 'huggingface',
+                    'metadata': metadata
                 })
+            
+            # If we found models from the direct search, save them to the cache
+            if results:
+                try:
+                    # Get existing cache
+                    cached_models = load_huggingface_models_from_cache()
+                    
+                    # Add new models if they don't exist in cache
+                    existing_ids = {m.get('id') for m in cached_models}
+                    for model in results:
+                        if model.get('id') not in existing_ids:
+                            cached_models.append(model)
+                    
+                    # Save updated cache
+                    cache_path = get_hf_models_cache_path()
+                    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                    with open(cache_path, 'w') as f:
+                        json.dump(cached_models, f, indent=2)
+                    
+                    print(f"Added {len(results)} new models to HF cache.")
+                except Exception as cache_e:
+                    print(f"Error updating HF cache with search results: {cache_e}")
             
             return results
         except Exception as e:
@@ -472,14 +712,26 @@ def search_huggingface_models(query=None, limit=20):
         print(f"Error searching Hugging Face models: {e}")
         return []
 
-def update_huggingface_models_cache():
+def update_huggingface_models_cache(limit=50):
     """
     Update the Hugging Face models cache by fetching from the HF website.
     This is a separate function that can be called to refresh the cache.
     
+    Args:
+        limit: Maximum number of models to fetch
+        
     Returns:
         True if successful, False otherwise.
     """
+    # Try to use the model_scrapers module first
+    try:
+        from .model_scrapers import scrape_huggingface_models, are_scrapers_available
+        if are_scrapers_available():
+            models = scrape_huggingface_models(limit=limit)
+            return len(models) > 0
+    except ImportError:
+        print("Model scrapers not available, using fallback method")
+        # Continue with the fallback method below
     try:
         print("Fetching models from Hugging Face...")
         # Use multiple User-Agent options to avoid 401 errors
@@ -550,13 +802,45 @@ def update_huggingface_models_cache():
             updated_elem = card.select_one('div.metadata time')
             updated = updated_elem.text.strip() if updated_elem else ""
             
-            results.append({
-                'id': model_id,
+            # Extract model URL
+            model_url = None
+            if model_id_elem and 'href' in model_id_elem.attrs:
+                href = model_id_elem['href']
+                if href.startswith('/'):
+                    model_url = f"https://huggingface.co{href}"
+                elif href.startswith('http'):
+                    model_url = href
+            
+            # Extract size from description if available
+            size = "Unknown"
+            size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', description)
+            if size_match:
+                size = size_match.group(1)
+            
+            # Create metadata dictionary
+            metadata = {
                 'description': description,
                 'downloads': downloads,
                 'updated': updated,
+                'url': model_url,
+                'size': size,
                 'source': 'huggingface'
-            })
+            }
+            
+            # Create the model entry
+            model_entry = {
+                'id': model_id,
+                'name': model_id,  # Use id as name for consistency
+                'description': description,
+                'downloads': downloads,
+                'updated': updated,
+                'url': model_url,
+                'size': size,
+                'source': 'huggingface',
+                'metadata': metadata
+            }
+            
+            results.append(model_entry)
         
         # Always ensure Bielik models are included
         # First, get all Bielik models from DEFAULT_HF_MODELS
@@ -566,11 +850,39 @@ def update_huggingface_models_cache():
         existing_ids = [m['id'] for m in results]
         for bielik_model in bielik_models:
             if bielik_model['id'] not in existing_ids:
+                # Add metadata if not present
+                if 'metadata' not in bielik_model:
+                    bielik_model['metadata'] = {
+                        'description': bielik_model.get('description', ''),
+                        'downloads': bielik_model.get('downloads', ''),
+                        'updated': bielik_model.get('updated', ''),
+                        'url': f"https://huggingface.co/{bielik_model['id']}",
+                        'size': bielik_model.get('size', 'Unknown'),
+                        'source': 'huggingface'
+                    }
+                # Add name if not present
+                if 'name' not in bielik_model:
+                    bielik_model['name'] = bielik_model['id']
+                
                 results.append(bielik_model)
                 existing_ids.append(bielik_model['id'])
         
         # If we didn't find any models, use the default list
         if not results:
+            # Ensure all DEFAULT_HF_MODELS have metadata
+            for model in DEFAULT_HF_MODELS:
+                if 'metadata' not in model:
+                    model['metadata'] = {
+                        'description': model.get('description', ''),
+                        'downloads': model.get('downloads', ''),
+                        'updated': model.get('updated', ''),
+                        'url': f"https://huggingface.co/{model['id']}",
+                        'size': model.get('size', 'Unknown'),
+                        'source': 'huggingface'
+                    }
+                if 'name' not in model:
+                    model['name'] = model['id']
+            
             results = DEFAULT_HF_MODELS
         
         # Save to cache file
@@ -593,6 +905,21 @@ def update_huggingface_models_cache():
         try:
             cache_path = get_hf_models_cache_path()
             os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+            
+            # Ensure all DEFAULT_HF_MODELS have metadata
+            for model in DEFAULT_HF_MODELS:
+                if 'metadata' not in model:
+                    model['metadata'] = {
+                        'description': model.get('description', ''),
+                        'downloads': model.get('downloads', ''),
+                        'updated': model.get('updated', ''),
+                        'url': f"https://huggingface.co/{model['id']}",
+                        'size': model.get('size', 'Unknown'),
+                        'source': 'huggingface'
+                    }
+                if 'name' not in model:
+                    model['name'] = model['id']
+            
             with open(cache_path, 'w') as f:
                 json.dump(DEFAULT_HF_MODELS, f, indent=2)
             print("Created default HF models cache.")
@@ -835,32 +1162,49 @@ def update_models_from_huggingface(query=None, interactive=True):
             print(f"  {model['name']:<40} {model['size']:<6} {model['desc']}")
     else:
         print("No new models added. All selected models already exist in the local list.")
-    
+
     return existing_models
 
-def update_models_from_ollama():
+def update_models_from_ollama(save_to_cache=True, limit=50):
     """
     Fetch the latest coding-related models up to 7B from the Ollama library web page
     and update the local models.json file.
+
+    Args:
+        save_to_cache: Whether to save the models to the ollama_models.json cache file.
+        limit: Maximum number of models to fetch
+
+    Returns:
+        The list of models from Ollama.
     """
+    # Try to use the model_scrapers module first
+    try:
+        from .model_scrapers import scrape_ollama_models, are_scrapers_available
+        if are_scrapers_available():
+            print("Using model scrapers to fetch Ollama models")
+            models = scrape_ollama_models(limit=limit)
+            if models:
+                return models
+    except ImportError:
+        print("Model scrapers not available, using fallback method")
+        # Continue with the fallback method below
     import requests
     import re
     from bs4 import BeautifulSoup
     import json
-    import os
-    
+
     MODELS_HTML_URL = "https://ollama.com/library"
     try:
         # Fetch the Ollama library page
         response = requests.get("https://ollama.com/library")
         response.raise_for_status()
-        
+
         # Parse the HTML
         soup = BeautifulSoup(response.text, 'html.parser')
-        
+
         # Find all model cards
         model_cards = soup.find_all('div', class_=re.compile('card'))
-        
+
         # Extract model information
         models = []
         for card in model_cards:
@@ -869,66 +1213,103 @@ def update_models_from_ollama():
                 name_elem = card.find('h3') or card.find('h2')
                 if not name_elem:
                     continue
-                
+
                 # Get the full name with tag
                 model_name = name_elem.text.strip()
-                
+
                 # Extract the description
                 desc_elem = card.find('p')
                 description = desc_elem.text.strip() if desc_elem else ""
-                
+
                 # Extract the model size if available
                 size_match = re.search(r'\b(\d+(\.\d+)?[BM])\b', description)
                 size = size_match.group(1) if size_match else "Unknown"
-                
+
+                # Try to extract the model URL
+                model_url = None
+                link_elem = card.find('a')
+                if link_elem and 'href' in link_elem.attrs:
+                    href = link_elem['href']
+                    if href.startswith('/'):
+                        model_url = f"https://ollama.com{href}"
+                    elif href.startswith('http'):
+                        model_url = href
+
+                # Extract metadata
+                metadata = {
+                    'size_b': size,
+                    'description': description,
+                    'url': model_url,
+                    'source': 'ollama'
+                }
+
                 # Check if this is a coding-related model
-                is_coding = any(keyword in description.lower() or keyword in model_name.lower() 
-                               for keyword in ['code', 'programming', 'developer', 'coder'])
-                
-                # Filter out models larger than 7B
-                is_small_enough = True
-                if 'B' in size:
+                is_coding = any(keyword in description.lower() for keyword in ['code', 'program', 'develop', 'python', 'javascript', 'java', 'c++', 'typescript'])
+
+                # Check if this is a small enough model (up to 7B)
+                is_small = True  # Default to True
+                if size.endswith('B'):
                     try:
-                        size_value = float(size.replace('B', ''))
-                        is_small_enough = size_value <= 7.0
+                        size_value = float(size[:-1])
+                        is_small = size_value <= 7.0
                     except ValueError:
-                        pass  # If we can't parse the size, assume it's ok
-                
-                # Only add coding-related models that are small enough
-                if is_coding and is_small_enough:
+                        pass  # If we can't parse the size, assume it's small enough
+
+                # Only add coding-related models up to 7B
+                if is_small and (is_coding or 'code' in model_name.lower()):
                     models.append({
-                        "name": model_name,
-                        "size": size,
-                        "desc": description
+                        'name': model_name,
+                        'size': size,
+                        'desc': description,
+                        'url': model_url,
+                        'source': 'ollama',
+                        'metadata': metadata
                     })
             except Exception as e:
-                print(f"Error parsing model card: {e}")
+                print(f"Error processing model card: {e}")
                 continue
-        
-        # Add default models if not already in the list
-        model_names = [model["name"] for model in models]
-        for default_model in DEFAULT_MODELS:
-            if default_model["name"] not in model_names:
-                models.append(default_model)
-        
-        # Get installed models from Ollama
-        try:
-            ollama = get_ollama_integration()
-            ollama.start_ollama()
-            installed_models = ollama.list_installed_models()
-            
-            # Add installed models that aren't already in the list
-            for installed in installed_models:
-                if installed['name'] not in model_names:
-                    models.append({
-                        "name": installed['name'],
-                        "size": "Unknown",
-                        "desc": f"Installed model: {installed['name']}"
-                    })
-                    model_names.append(installed['name'])
-        except Exception as e:
-            print(f"Warning: Could not get installed models from Ollama: {e}")
-        
+
+        # Save to ollama_models.json cache file if requested
+        if save_to_cache and models:
+            try:
+                cache_path = get_ollama_models_cache_path()
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                with open(cache_path, 'w') as f:
+                    json.dump(models, f, indent=2)
+                print(f"Saved {len(models)} Ollama models to cache file.")
+            except Exception as e:
+                print(f"Error saving Ollama models to cache: {e}")
+
+        # If we found models, also update the models.json file
+        if models:
+            # Load existing models
+            existing_models = load_models_from_json()
+
+            # Create a set of existing model names for quick lookup
+            existing_model_names = {m['name'] for m in existing_models}
+
+            # Add new models that don't already exist
+            for model in models:
+                if model['name'] not in existing_model_names:
+                    # Create a simplified version for models.json
+                    simple_model = {
+                        'name': model['name'],
+                        'size': model['size'],
+                        'desc': model['desc'],
+                        'source': 'ollama'
+                    }
+                    existing_models.append(simple_model)
+                    existing_model_names.add(model['name'])
+
+            # Save the updated models list
+            save_models_to_json(existing_models)
+
+            print(f"Updated models list with {len(models)} models from Ollama library.")
+            return models
+        else:
+            print("No models found on Ollama library page.")
+            return load_ollama_models_from_cache() or []
+
         # Save the updated models to the JSON file
         save_models_to_json(models)
         
@@ -936,7 +1317,26 @@ def update_models_from_ollama():
         return models
     except Exception as e:
         print(f"Error updating models from Ollama: {e}")
-        return DEFAULT_MODELS
+        return load_ollama_models_from_cache() or DEFAULT_MODELS
+
+
+def load_ollama_models_from_cache():
+    """
+    Load Ollama models from the cache file.
+    
+    Returns:
+        A list of Ollama models, or an empty list if the cache file doesn't exist or is invalid.
+    """
+    try:
+        cache_path = get_ollama_models_cache_path()
+        if os.path.exists(cache_path):
+            with open(cache_path, 'r') as f:
+                return json.load(f)
+        return []
+    except Exception as e:
+        print(f"Error loading Ollama models from cache: {e}")
+        return []
+
 
 class ModelManager:
     """
