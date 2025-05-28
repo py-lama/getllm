@@ -8,17 +8,17 @@ It handles model management, automatic installation, and fallback mechanisms.
 """
 
 import os
-import json
-import time
-import subprocess
 import sys
-import re
-import requests
 import platform
-import threading
+import subprocess
 import logging
-from typing import List, Dict, Any, Tuple, Optional
+import requests
+import time
+import json
+import re
+import threading
 from pathlib import Path
+from typing import List, Dict, Any, Tuple, Optional
 
 # Create .getllm directory if it doesn't exist
 PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.getllm')
@@ -157,14 +157,90 @@ class OllamaIntegration:
         """
         try:
             print("\nOllama is not installed but required for this operation.")
-            install_choice = input("Do you want to install Ollama now? (y/n): ").strip().lower()
             
-            if install_choice != 'y' and install_choice != 'yes':
-                print("Installation cancelled. Please install Ollama manually from https://ollama.com")
+            # Use questionary if available for better UX, otherwise fallback to input
+            try:
+                import questionary
+                has_questionary = True
+            except ImportError:
+                has_questionary = False
+            
+            # Define installation options
+            options = [
+                {"name": "Install Ollama directly (recommended)", "value": "direct"},
+                {"name": "Install Ollama using Docker", "value": "docker"},
+                {"name": "Manual installation (I'll install it myself)", "value": "manual"},
+                {"name": "Continue in mock mode (no Ollama required)", "value": "mock"},
+                {"name": "Cancel", "value": "cancel"}
+            ]
+            
+            # Present installation options to the user
+            if has_questionary:
+                install_choice = questionary.select(
+                    "How would you like to install Ollama?",
+                    choices=[option["name"] for option in options],
+                    use_shortcuts=True
+                ).ask()
+                
+                # Map the selected name back to the value
+                for option in options:
+                    if option["name"] == install_choice:
+                        install_choice = option["value"]
+                        break
+            else:
+                print("Installation options:")
+                for i, option in enumerate(options):
+                    print(f"  {i+1}. {option['name']}")
+                
+                choice_input = input("Select an option (1-5): ").strip()
+                try:
+                    choice_idx = int(choice_input) - 1
+                    if 0 <= choice_idx < len(options):
+                        install_choice = options[choice_idx]["value"]
+                    else:
+                        install_choice = "cancel"
+                except ValueError:
+                    install_choice = "cancel"
+            
+            # Handle the user's choice
+            if install_choice == "cancel":
+                print("Installation cancelled.")
                 print("If you want to continue without Ollama, use the --mock flag.")
                 return False
+            
+            elif install_choice == "manual":
+                print("\nPlease install Ollama manually from https://ollama.com")
+                print("After installation, restart getllm to use Ollama.")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            elif install_choice == "mock":
+                print("\nContinuing in mock mode. No Ollama installation required.")
+                # Set environment variable to indicate mock mode
+                os.environ['GETLLM_MOCK_MODE'] = 'true'
+                return False
+            
+            elif install_choice == "docker":
+                return self._install_ollama_docker()
+            
+            else:  # direct installation
+                return self._install_ollama_direct()
                 
-            print("\nInstalling Ollama...")
+        except Exception as e:
+            logger.error(f"Error in Ollama installation menu: {e}")
+            print(f"\n❌ Error during Ollama installation: {e}")
+            print("Please install Ollama manually from https://ollama.com")
+            print("If you want to continue without Ollama, use the --mock flag.")
+            return False
+    
+    def _install_ollama_direct(self) -> bool:
+        """Install Ollama directly using the official installation script.
+        
+        Returns:
+            bool: True if installation was successful, False otherwise.
+        """
+        try:
+            print("\nInstalling Ollama directly...")
             
             # Determine the installation command based on the OS
             if platform.system() == "Darwin":  # macOS
@@ -197,12 +273,118 @@ class OllamaIntegration:
             else:
                 print(f"\n❌ Failed to install Ollama: {result.stderr}")
                 print("Please install Ollama manually from https://ollama.com")
+                print("If you want to continue without Ollama, use the --mock flag.")
                 return False
                 
         except Exception as e:
-            logger.error(f"Error installing Ollama: {e}")
+            logger.error(f"Error installing Ollama directly: {e}")
             print(f"\n❌ Error installing Ollama: {e}")
             print("Please install Ollama manually from https://ollama.com")
+            print("If you want to continue without Ollama, use the --mock flag.")
+            return False
+    
+    def _install_ollama_docker(self) -> bool:
+        """Install and run Ollama using Docker.
+        
+        Returns:
+            bool: True if installation was successful, False otherwise.
+        """
+        try:
+            print("\nChecking if Docker is installed...")
+            
+            # Check if Docker is installed
+            docker_check = subprocess.run(
+                ["docker", "--version"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if docker_check.returncode != 0:
+                print("❌ Docker is not installed or not in PATH.")
+                print("Please install Docker first: https://docs.docker.com/get-docker/")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            print(f"✅ Docker found: {docker_check.stdout.strip()}")
+            
+            # Pull and run the Ollama Docker container
+            print("\nPulling the Ollama Docker image...")
+            pull_cmd = subprocess.run(
+                ["docker", "pull", "ollama/ollama:latest"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if pull_cmd.returncode != 0:
+                print(f"❌ Failed to pull Ollama Docker image: {pull_cmd.stderr}")
+                print("If you want to continue without Ollama, use the --mock flag.")
+                return False
+            
+            print("✅ Ollama Docker image pulled successfully.")
+            
+            # Check if the container is already running
+            check_running = subprocess.run(
+                ["docker", "ps", "-q", "-f", "name=ollama"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if check_running.stdout.strip():
+                print("✅ Ollama Docker container is already running.")
+            else:
+                # Check if the container exists but is stopped
+                check_exists = subprocess.run(
+                    ["docker", "ps", "-a", "-q", "-f", "name=ollama"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                if check_exists.stdout.strip():
+                    print("Starting existing Ollama Docker container...")
+                    start_cmd = subprocess.run(
+                        ["docker", "start", "ollama"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    
+                    if start_cmd.returncode != 0:
+                        print(f"❌ Failed to start Ollama Docker container: {start_cmd.stderr}")
+                        print("If you want to continue without Ollama, use the --mock flag.")
+                        return False
+                else:
+                    print("Creating and starting Ollama Docker container...")
+                    run_cmd = subprocess.run(
+                        ["docker", "run", "-d", "--name", "ollama", "-p", "11434:11434", "ollama/ollama:latest"],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    
+                    if run_cmd.returncode != 0:
+                        print(f"❌ Failed to run Ollama Docker container: {run_cmd.stderr}")
+                        print("If you want to continue without Ollama, use the --mock flag.")
+                        return False
+            
+            print("\n✅ Ollama is now running in Docker!")
+            print("The Ollama API is available at http://localhost:11434")
+            
+            # Wait a moment for the server to fully start
+            print("Waiting for Ollama server to initialize...")
+            time.sleep(2)
+            
+            # Update the status
+            return self.check_server_running()
+                
+        except Exception as e:
+            logger.error(f"Error installing Ollama with Docker: {e}")
+            print(f"\n❌ Error setting up Ollama with Docker: {e}")
+            print("Please install Ollama manually from https://ollama.com")
+            print("If you want to continue without Ollama, use the --mock flag.")
             return False
     
     def check_server_running(self) -> bool:

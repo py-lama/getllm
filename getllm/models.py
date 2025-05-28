@@ -361,21 +361,23 @@ def interactive_model_search(query=None, check_ollama=True):
         if check_ollama:
             from getllm.ollama_integration import OllamaIntegration
             ollama = OllamaIntegration()
-            if not ollama.is_ollama_installed:
+            
+            # Check if we're already in mock mode (set by previous installation choice)
+            if os.environ.get('GETLLM_MOCK_MODE') == 'true':
+                print("\nRunning in mock mode - Ollama checks bypassed")
+                # Continue with model search in mock mode
+            elif not ollama.is_ollama_installed:
                 print("\nOllama is not installed but required for model installation.")
-                install_choice = questionary.confirm("Do you want to install Ollama now?", default=True).ask()
                 
-                if install_choice:
-                    # Try to install Ollama
-                    if ollama._install_ollama():
-                        print("\n✅ Ollama installed successfully! Continuing with model search...")
-                    else:
-                        print("\nIf you want to continue without Ollama, use the --mock flag:")
-                        print("  getllm --mock --search <query>")
-                        return None
+                # Use the enhanced installation options
+                if ollama._install_ollama():
+                    print("\n✅ Ollama installed successfully! Continuing with model search...")
+                elif os.environ.get('GETLLM_MOCK_MODE') == 'true':
+                    # User chose mock mode in the installation menu
+                    print("\nContinuing with model search in mock mode...")
                 else:
-                    print("\nOllama installation skipped.")
-                    print("If you want to continue without Ollama, use the --mock flag:")
+                    # User cancelled or installation failed
+                    print("\nIf you want to continue without Ollama, use the --mock flag:")
                     print("  getllm --mock --search <query>")
                     return None
         
