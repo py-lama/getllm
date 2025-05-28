@@ -6,48 +6,80 @@ Pobiera i zapisuje wszystkie dostępne modele z Ollama Library do JSON
 
 import json
 import time
-import requests
 from typing import List, Dict, Any
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin, parse_qs, urlparse
+from urllib.parse import urljoin
 import argparse
 import sys
-
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+from bs4 import BeautifulSoup
 
 class OllamaModelsScraper:
-    def __init__(self):
+    def __init__(self, headless: bool = True):
         self.base_url = "https://ollama.com"
         self.library_url = f"{self.base_url}/library"
         self.search_url = f"{self.base_url}/search"
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
         self.models = []
-
-    def get_page(self, url: str, params: dict = None) -> BeautifulSoup:
-        """Pobiera stronę i zwraca parsed HTML"""
+        self.headless = headless
+        self.driver = self._init_driver()
+    
+    def _init_driver(self):
+        """Initialize and return a Selenium WebDriver"""
+        options = Options()
+        if self.headless:
+            options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--window-size=1920,1080')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-infobars')
+        
+        driver = webdriver.Chrome(
+            service=Service(ChromeDriverManager().install()),
+            options=options
+        )
+        return driver
+    
+    def get_page(self, url: str, wait_for: str = None, timeout: int = 20) -> BeautifulSoup:
+        """Load a page with Selenium and return parsed HTML"""
+        print(f"🌐 Loading URL: {url}")
         try:
-            print(f"🌐 Fetching URL: {url} with params: {params}")
-            response = self.session.get(url, params=params, timeout=30)
-            response.raise_for_status()
+            self.driver.get(url)
             
-            # Save raw HTML for debugging
-            debug_filename = f"debug_{url.replace('https://', '').replace('/', '_')}.html"
-            with open(debug_filename, 'w', encoding='utf-8') as f:
-                f.write(response.text)
-            print(f"💾 Saved response to {debug_filename}")
+            # Wait for the page to load completely
+            if wait_for:
+                WebDriverWait(self.driver, timeout).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, wait_for))
+                )
             
-            # Print first 500 chars of response for quick inspection
-            print("📄 Response preview:")
-            print(response.text[:500] + "...")
+            # Wait a bit more for dynamic content
+            time.sleep(3)
             
-            return BeautifulSoup(response.content, 'html.parser')
+            # Save page source for debugging
+            page_source = self.driver.page_source
+            with open('debug_page.html', 'w', encoding='utf-8') as f:
+                f.write(page_source)
+            print("💾 Saved page source to debug_page.html")
+            
+            return BeautifulSoup(page_source, 'html.parser')
+            
         except Exception as e:
-            print(f"❌ Error fetching {url}: {e}")
+            print(f"❌ Error loading {url}: {e}")
             import traceback
             traceback.print_exc()
             return None
+    
+    def close(self):
+        """Close the WebDriver"""
+        if self.driver:
+            self.driver.quit()
+            print("✅ WebDriver closed")
 
     def extract_model_info(self, model_element) -> Dict[str, Any]:
         """Wyciąga informacje o modelu z elementu HTML"""
