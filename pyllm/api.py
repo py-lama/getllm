@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 
-from pyllm.models import ModelManager
+from getllm.models import ModelManager
 
 # Create FastAPI app
 app = FastAPI(

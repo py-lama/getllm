@@ -1,6 +1,6 @@
-# pyllm
+# getllm
 
-pyllm is a Python package for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
+getllm is a Python package for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
 
 ## Ollama Integration
 
@@ -29,7 +29,7 @@ PyLLM integrates with LogLama as the primary service in the PyLama ecosystem. Th
 ## General Diagram (Mermaid)
 ```mermaid
 graph TD
-    A[User] -->|CLI/Interactive| B[pyllm/cli.py]
+    A[User] -->|CLI/Interactive| B[getllm/cli.py]
     B --> C[models.py]
     B --> D[interactive_cli.py]
     C --> E[LogLama Central .env]
@@ -46,7 +46,7 @@ User
     |
     v
 +-----------------+
-|   pyllm CLI     |
+|   getllm CLI     |
 +-----------------+
     |
     v
@@ -68,8 +68,8 @@ User
 
 ## Modes
 
-- **CLI**: `pyllm <command>`
-- **Interactive**: `pyllm -i` or `pyllm interactive`
+- **CLI**: `getllm <command>`
+- **Interactive**: `getllm -i` or `getllm interactive`
 
 ---
 
@@ -125,9 +125,9 @@ make help
 
 ## Key Files
 
-- `pyllm/cli.py` – main CLI
-- `pyllm/interactive_cli.py` – interactive shell with menu and cursor selection
-- `pyllm/models.py` – model logic, .env/env.example handling, Ollama integration
+- `getllm/cli.py` – main CLI
+- `getllm/interactive_cli.py` – interactive shell with menu and cursor selection
+- `getllm/models.py` – model logic, .env/env.example handling, Ollama integration
 - `.env`/`env.example` – environment config and default model
 
 ---
@@ -136,32 +136,32 @@ make help
 
 ### List available models
 ```bash
-pyllm list
+getllm list
 ```
 
 ### Install a model
 ```bash
-pyllm install deepseek-coder:6.7b
+getllm install deepseek-coder:6.7b
 ```
 
 ### Set default model
 ```bash
-pyllm set-default deepseek-coder:6.7b
+getllm set-default deepseek-coder:6.7b
 ```
 
 ### Show default model
 ```bash
-pyllm default
+getllm default
 ```
 
 ### Update model list from Ollama
 ```bash
-pyllm update
+getllm update
 ```
 
 ### Run interactive mode (menu, cursor selection)
 ```bash
-pyllm -i
+getllm -i
 ```
 
 ---
@@ -181,7 +181,7 @@ flowchart TD
 ## Interactive mode - menu (ASCII)
 ```
 +--------------------------------+
-|  pyllm - interactive mode       |
+|  getllm - interactive mode       |
 +--------------------------------+
 | > List available models         |
 |   Show default model           |
@@ -200,7 +200,7 @@ flowchart TD
 ## Installation
 
 ```bash
-pip install pyllm
+pip install getllm
 ```
 
 ## Usage
@@ -208,7 +208,7 @@ pip install pyllm
 ### Basic Model Management
 
 ```python
-from pyllm import get_models, get_default_model, set_default_model, install_model
+from getllm import get_models, get_default_model, set_default_model, install_model
 
 # Get available models
 models = get_models()
@@ -229,7 +229,7 @@ install_model("deepseek-coder:6.7b")
 ### Direct Ollama Integration
 
 ```python
-from pyllm import OllamaIntegration, get_ollama_integration, start_ollama_server
+from getllm import OllamaIntegration, get_ollama_integration, start_ollama_server
 
 # Start the Ollama server if it's not already running
 ollama = start_ollama_server()
@@ -242,11 +242,11 @@ if ollama.check_model_availability():
     print(f"Model {ollama.model} is available")
 else:
     print(f"Model {ollama.model} is not available")
-    
+
     # Install the model
     if ollama.install_model(ollama.model):
         print(f"Successfully installed {ollama.model}")
-    
+
 # List installed models
 installed_models = ollama.list_installed_models()
 for model in installed_models:

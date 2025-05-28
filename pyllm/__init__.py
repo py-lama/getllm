@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Pyllm: A package for managing LLM models with Ollama integration.
+getLLM: A package for managing LLM models with Ollama integration.
 
 This package provides functionality for managing, installing, and configuring
 LLM models for use with the Ollama API.

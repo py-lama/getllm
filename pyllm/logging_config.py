@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-Pyllm Logging Configuration
+getLLM Logging Configuration
 
-This module configures logging for Pyllm using the PyLogs package.
+This module configures logging for getLLM using the PyLogs package.
 It ensures that environment variables are loaded before any other libraries.
 """
 
@@ -47,7 +47,7 @@ logging.basicConfig(
 
 def init_logging():
     """
-    Initialize logging for Pyllm using PyLogs.
+    Initialize logging for getLLM using PyLogs.
     
     This function should be called at the very beginning of the application
     before any other imports or configurations are done.
@@ -60,22 +60,22 @@ def init_logging():
     load_env(verbose=True)
     
     # Get logging configuration from environment variables
-    log_level = get_env('PYLLM_LOG_LEVEL', 'INFO')
-    log_dir = get_env('PYLLM_LOG_DIR', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs'))
-    db_enabled = get_env('PYLLM_DB_LOGGING', 'true').lower() in ('true', 'yes', '1')
-    db_path = get_env('PYLLM_DB_PATH', os.path.join(log_dir, 'pyllm.db'))
-    json_format = get_env('PYLLM_JSON_LOGS', 'false').lower() in ('true', 'yes', '1')
+    log_level = get_env('GETLLM_LOG_LEVEL', 'INFO')
+    log_dir = get_env('GETLLM_LOG_DIR', os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logs'))
+    db_enabled = get_env('GETLLM_DB_LOGGING', 'true').lower() in ('true', 'yes', '1')
+    db_path = get_env('GETLLM_DB_PATH', os.path.join(log_dir, 'getllm.db'))
+    json_format = get_env('GETLLM_JSON_LOGS', 'false').lower() in ('true', 'yes', '1')
     
     # Ensure log directory exists
     os.makedirs(log_dir, exist_ok=True)
     
     # Configure logging
     logger = configure_logging(
-        name='pyllm',
+        name='getllm',
         level=log_level,
         console=True,
         file=True,
-        file_path=os.path.join(log_dir, 'pyllm.log'),
+        file_path=os.path.join(log_dir, 'getllm.log'),
         database=db_enabled,
         db_path=db_path,
         json=json_format,
@@ -83,7 +83,7 @@ def init_logging():
     )
     
     # Log initialization
-    logger.info('Pyllm logging initialized with PyLogs')
+    logger.info('getLLM logging initialized with PyLogs')
     return True
 
 
@@ -92,15 +92,15 @@ def get_logger(name=None):
     Get a logger instance.
     
     Args:
-        name (str, optional): Name of the logger. Defaults to 'pyllm'.
+        name (str, optional): Name of the logger. Defaults to 'getllm'.
         
     Returns:
         Logger: A configured logger instance.
     """
     if not name:
-        name = 'pyllm'
-    elif not name.startswith('pyllm.'):
-        name = f'pyllm.{name}'
+        name = 'getllm'
+    elif not name.startswith('getllm.'):
+        name = f'getllm.{name}'
     
     if LOGLAMA_AVAILABLE:
         from loglama import get_logger as loglama_get_logger

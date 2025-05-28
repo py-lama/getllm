@@ -3,15 +3,15 @@ requires = [ "poetry-core>=1.0.0",]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
-name = "pyllm"
-version = "0.1.9"
+name = "getllm"
+version = "0.1.12"
 description = "Python LLM operations service for the DevLama ecosystem"
 authors = [ "Tom Sapletta <info@softreck.dev>",]
 license = "Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/tom-sapletta-com/py-lama"
 [[tool.poetry.packages]]
-include = "pyllm"
+include = "getllm"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<4.0"
@@ -21,7 +21,7 @@ beautifulsoup4 = "^4.12.2"
 python-dotenv = "^1.0.0"
 
 [tool.poetry.scripts]
-pyllm = "pyllm.cli:main"
+getllm = "getllm.cli:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"

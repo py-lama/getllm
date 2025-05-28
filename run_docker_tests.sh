@@ -106,7 +106,7 @@ fi
 # Start the mock service
 if [ "$MOCK_SERVICE" = true ]; then
     print_header "Starting PyLLM mock service"
-    docker-compose -f docker-compose.test.yml up -d pyllm-mock
+    docker-compose -f docker-compose.test.yml up -d getllm-mock
     
     # Wait for the service to be ready
     echo -e "${YELLOW}Waiting for mock service to start...${NC}"
@@ -129,7 +129,7 @@ fi
 # Run tests if requested
 if [ "$RUN_TESTS" = true ]; then
     print_header "Running PyLLM tests"
-    docker-compose -f docker-compose.test.yml up pyllm-test
+    docker-compose -f docker-compose.test.yml up getllm-test
     exit 0
 fi
 
@@ -138,10 +138,10 @@ if [ "$INTERACTIVE" = true ] || [ "$RUN_TESTS" = false -a "$MOCK_SERVICE" = fals
     print_header "Starting interactive mode"
     echo -e "${YELLOW}Available commands:${NC}"
     echo -e "  ${GREEN}python -m pytest tests/ -v${NC} - Run all tests"
-    echo -e "  ${GREEN}python -m pyllm.app --port 8002 --host 0.0.0.0${NC} - Start the PyLLM service"
+    echo -e "  ${GREEN}python -m getllm.app --port 8002 --host 0.0.0.0${NC} - Start the PyLLM service"
     echo -e "\n${YELLOW}Type 'exit' to exit the container${NC}\n"
     
-    docker-compose -f docker-compose.test.yml run --rm pyllm-test bash
+    docker-compose -f docker-compose.test.yml run --rm getllm-test bash
 fi
 
 echo -e "\n${YELLOW}To stop the containers, run:${NC} $0 --stop"

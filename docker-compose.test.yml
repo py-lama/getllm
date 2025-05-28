@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  pyllm-test:
+  getllm-test:
     build:
       context: .
       dockerfile: Dockerfile.test
@@ -17,7 +17,7 @@ services:
     command: |
       bash -c "python -m pytest tests/ -v --junitxml=/app/test-reports/test-results.xml"
 
-  pyllm-mock:
+  getllm-mock:
     build:
       context: .
       dockerfile: Dockerfile.test
@@ -31,7 +31,7 @@ services:
       - HOST=0.0.0.0
       - DEBUG=True
     command: |
-      bash -c "python -m pyllm.app --port 8002 --host 0.0.0.0"
+      bash -c "python -m getllm.app --port 8002 --host 0.0.0.0"
 
 volumes:
   test-reports:

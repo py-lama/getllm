@@ -71,7 +71,7 @@ def get_central_env_path():
         # Check if this looks like the py-lama directory
         if (current_dir / "pylama").exists() and (current_dir / "loglama").exists():
             return current_dir / "pylama" / ".env"
-        if (current_dir / "pylama").exists() and (current_dir / "pyllm").exists():
+        if (current_dir / "pylama").exists() and (current_dir / "getllm").exists():
             return current_dir / "pylama" / ".env"
         
         # Move up one directory

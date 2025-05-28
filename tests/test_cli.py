@@ -4,7 +4,7 @@ import os
 import pytest
 
 def run_cli(args):
-    cmd = [sys.executable, '-m', 'pyllm.cli'] + args
+    cmd = [sys.executable, '-m', 'getllm.cli'] + args
     result = subprocess.run(cmd, capture_output=True, text=True)
     return result
 

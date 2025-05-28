@@ -1,4 +1,4 @@
-from pyllm import models
+from getllm import models
 import questionary
 
 MENU_OPTIONS = [
@@ -13,7 +13,7 @@ MENU_OPTIONS = [
 ]
 
 INTRO = """
-Tryb interaktywny pyllm
+Tryb interaktywny getllm
 Poruszaj się po menu strzałkami, zatwierdzaj Enterem lub wpisz komendę (np. install <model>)
 """
 

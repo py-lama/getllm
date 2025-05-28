@@ -20,16 +20,16 @@ import logging
 from typing import List, Dict, Any, Tuple, Optional
 from pathlib import Path
 
-# Create .pyllm directory if it doesn't exist
-PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.pyllm')
+# Create .getllm directory if it doesn't exist
+PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.getllm')
 os.makedirs(PACKAGE_DIR, exist_ok=True)
 
 # Configure logger for OllamaIntegration
-logger = logging.getLogger('pyllm.ollama')
+logger = logging.getLogger('getllm.ollama')
 logger.setLevel(logging.INFO)
 
 # Create file handler for Ollama-specific logs
-ollama_log_file = os.path.join(PACKAGE_DIR, 'pyllm_ollama.log')
+ollama_log_file = os.path.join(PACKAGE_DIR, 'getllm_ollama.log')
 file_handler = logging.FileHandler(ollama_log_file)
 file_formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s',

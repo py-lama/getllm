@@ -1,8 +1,8 @@
 import argparse
-from pyllm import models
+from getllm import models
 
 def main():
-    parser = argparse.ArgumentParser(description="pyllm CLI - zarządzanie modelami LLM (Ollama)")
+    parser = argparse.ArgumentParser(description="getllm CLI - zarządzanie modelami LLM (Ollama)")
     parser.add_argument("-i", "--interactive", action="store_true", help="Uruchom w trybie interaktywnym (shell)")
     subparsers = parser.add_subparsers(dest="command")
 
@@ -29,7 +29,7 @@ def main():
 
     # Tryb interaktywny przez -i lub komendę 'interactive'
     if getattr(args, "interactive", False) or args.command == "interactive":
-        from pyllm.interactive_cli import interactive_shell
+        from getllm.interactive_cli import interactive_shell
         interactive_shell()
         return
 

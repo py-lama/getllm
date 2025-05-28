@@ -14,7 +14,7 @@ import json
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 # Initialize logging with PyLogs
-from pyllm.logging_config import init_logging, get_logger
+from getllm.logging_config import init_logging, get_logger
 
 # Initialize logging first, before any other imports
 init_logging()

@@ -34,22 +34,22 @@ test: setup
 # Lint code
 lint: setup
 	@echo "Linting PyLLM..."
-	@. venv/bin/activate && flake8 pyllm
+	@. venv/bin/activate && flake8 getllm
 
 # Format code
 format: setup
 	@echo "Formatting PyLLM..."
-	@. venv/bin/activate && black pyllm
+	@. venv/bin/activate && black getllm
 
 # Run the API server
 run: setup
 	@echo "Running PyLLM API server on port $(PORT)..."
-	@. venv/bin/activate && uvicorn pyllm.api:app --host $(HOST) --port $(PORT)
+	@. venv/bin/activate && uvicorn getllm.api:app --host $(HOST) --port $(PORT)
 
 # Run with custom port (for backward compatibility)
 run-port: setup
 	@echo "Running PyLLM API server on port $(PORT)..."
-	@. venv/bin/activate && uvicorn pyllm.api:app --host $(HOST) --port $(PORT)
+	@. venv/bin/activate && uvicorn getllm.api:app --host $(HOST) --port $(PORT)
 
 # Docker testing targets
 docker-build:

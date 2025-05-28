@@ -4,7 +4,7 @@ import json
 import tempfile
 from unittest.mock import patch, MagicMock, mock_open
 from pathlib import Path
-from pyllm.models import (
+from getllm.models import (
     get_models_dir,
     get_default_model,
     set_default_model,
@@ -161,7 +161,7 @@ def test_load_models_from_json_nonexistent_file(mock_exists):
     mock_exists.assert_called_once()
 
 
-@patch('pyllm.models.load_models_from_json')
+@patch('getllm.models.load_models_from_json')
 def test_get_models(mock_load):
     """Test getting models list."""
     mock_models = [
@@ -216,7 +216,7 @@ def test_list_installed_models(mock_check_output):
 
 @patch('requests.get')
 @patch('bs4.BeautifulSoup')
-@patch('pyllm.models.save_models_to_json')
+@patch('getllm.models.save_models_to_json')
 def test_update_models_from_ollama(mock_save, mock_soup, mock_get):
     """Test updating models from Ollama website."""
     # Mock the response from requests.get

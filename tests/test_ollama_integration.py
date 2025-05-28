@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Test the Ollama integration in the pyllm package.
+Test the Ollama integration in the getllm package.
 
 These tests verify that the Ollama integration functions work correctly.
 """
@@ -11,10 +11,10 @@ import sys
 import unittest
 from unittest.mock import patch, MagicMock
 
-# Add the parent directory to the path so we can import pyllm
+# Add the parent directory to the path so we can import getllm
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from pyllm import (
+from getllm import (
     get_ollama_integration,
     start_ollama_server,
     install_ollama_model,
@@ -26,7 +26,7 @@ from pyllm import (
 class TestOllamaIntegration(unittest.TestCase):
     """Test the Ollama integration functionality."""
 
-    @patch('pyllm.ollama_integration.requests.get')
+    @patch('getllm.ollama_integration.requests.get')
     def test_start_ollama_server_already_running(self, mock_get):
         """Test starting the Ollama server when it's already running."""
         # Mock the response from the Ollama API
@@ -41,7 +41,7 @@ class TestOllamaIntegration(unittest.TestCase):
         # Verify that the API was called
         mock_get.assert_called_once_with(ollama.version_api_url)
 
-    @patch('pyllm.ollama_integration.requests.get')
+    @patch('getllm.ollama_integration.requests.get')
     def test_check_model_availability_model_available(self, mock_get):
         """Test checking model availability when the model is available."""
         # Mock the response from the Ollama API
@@ -59,7 +59,7 @@ class TestOllamaIntegration(unittest.TestCase):
         mock_get.assert_called_once_with(ollama.list_api_url, timeout=10)
         self.assertTrue(result)
 
-    @patch('pyllm.ollama_integration.requests.get')
+    @patch('getllm.ollama_integration.requests.get')
     def test_check_model_availability_model_not_available(self, mock_get):
         """Test checking model availability when the model is not available."""
         # Mock the response from the Ollama API
@@ -79,7 +79,7 @@ class TestOllamaIntegration(unittest.TestCase):
             mock_get.assert_called_once_with(ollama.list_api_url, timeout=10)
             self.assertFalse(result)
 
-    @patch('pyllm.ollama_integration.subprocess.run')
+    @patch('getllm.ollama_integration.subprocess.run')
     def test_install_model(self, mock_run):
         """Test installing a model."""
         # Mock the subprocess.run function
@@ -98,7 +98,7 @@ class TestOllamaIntegration(unittest.TestCase):
         self.assertEqual(mock_run.call_args[0][0][2], 'codellama:7b')
         self.assertTrue(result)
 
-    @patch('pyllm.ollama_integration.requests.get')
+    @patch('getllm.ollama_integration.requests.get')
     def test_list_installed_models(self, mock_get):
         """Test listing installed models."""
         # Mock the response from the Ollama API
