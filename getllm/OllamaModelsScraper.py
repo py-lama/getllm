@@ -81,43 +81,40 @@ class OllamaModelsScraper:
             self.driver.quit()
             print("✅ WebDriver closed")
 
-    def extract_model_info(self, model_element) -> Dict[str, Any]:
-        """Wyciąga informacje o modelu z elementu HTML"""
+    def extract_model_info(self, card_element) -> Dict[str, Any]:
+        """Extract model information from a model card element"""
         try:
-            # Nazwa modelu
-            name_element = model_element.find('h2') or model_element.find('h3') or model_element.find('.font-medium')
-            name = name_element.get_text(strip=True) if name_element else "Unknown"
-
-            # Link do modelu
-            link_element = model_element.find('a')
-            relative_url = link_element.get('href') if link_element else ""
-            full_url = urljoin(self.base_url, relative_url)
-
-            # Pulls/Downloads
-            pulls_element = model_element.find(text=lambda x: x and ('pull' in x.lower() or 'download' in x.lower()))
-            pulls = pulls_element.strip() if pulls_element else "0"
-
-            # Rozmiar
-            size_element = model_element.find(text=lambda x: x and ('gb' in x.lower() or 'mb' in x.lower()))
-            size = size_element.strip() if size_element else "Unknown"
-
-            # Ostatnia aktualizacja
-            updated_element = model_element.find(text=lambda x: x and ('ago' in x.lower() or 'updated' in x.lower()))
-            updated = updated_element.strip() if updated_element else "Unknown"
-
-            # Opis
-            description_element = model_element.find('p') or model_element.find('.text-gray-600')
-            description = description_element.get_text(strip=True) if description_element else ""
-
-            # Tagi/kategorie
+            # Get model name
+            name_elem = card_element.find_element(By.CSS_SELECTOR, 'h3')
+            name = name_elem.text.strip() if name_elem else "Unknown"
+            
+            # Get model URL
+            link_elem = card_element.find_element(By.CSS_SELECTOR, 'a')
+            url = link_elem.get_attribute('href') if link_elem else ""
+            
+            # Get description
+            desc_elem = card_element.find_elements(By.CSS_SELECTOR, 'p')
+            description = desc_elem[0].text.strip() if desc_elem else ""
+            
+            # Get metadata (pulls, size, updated)
+            meta_elems = card_element.find_elements(By.CSS_SELECTOR, 'div.text-sm.text-gray-500')
+            metadata = [elem.text.strip().lower() for elem in meta_elems]
+            
+            pulls = next((m for m in metadata if 'pull' in m or 'download' in m), "0")
+            size = next((m for m in metadata if 'gb' in m or 'mb' in m), "Unknown")
+            updated = next((m for m in metadata if 'ago' in m or 'updated' in m), "Unknown")
+            
+            # Get tags
             tags = []
-            tag_elements = model_element.find_all('span', class_='tag') or model_element.find_all('.badge')
-            for tag in tag_elements:
-                tags.append(tag.get_text(strip=True))
-
+            tag_elems = card_element.find_elements(By.CSS_SELECTOR, 'span.bg-gray-100, span.inline-flex')
+            for tag in tag_elems:
+                tag_text = tag.text.strip()
+                if tag_text and tag_text not in ['Ollama', 'Model', 'Library']:
+                    tags.append(tag_text)
+            
             return {
                 "name": name,
-                "url": full_url,
+                "url": url,
                 "pulls": pulls,
                 "size": size,
                 "updated": updated,
@@ -127,118 +124,58 @@ class OllamaModelsScraper:
                 "ollama_command": f"ollama pull {name}",
                 "scraped_at": time.strftime("%Y-%m-%d %H:%M:%S")
             }
+            
         except Exception as e:
             print(f"⚠️ Error extracting model info: {e}")
+            import traceback
+            traceback.print_exc()
             return None
 
-    def get_model_details(self, model_url: str) -> Dict[str, Any]:
-        """Pobiera szczegółowe informacje o modelu ze strony modelu"""
-        soup = self.get_page(model_url)
-        if not soup:
-            return {}
-
-        details = {}
-        try:
-            # Parametry modelu
-            params_section = soup.find('section', text=lambda x: x and 'parameters' in x.lower())
-            if params_section:
-                details['parameters'] = params_section.get_text(strip=True)
-
-            # Architektura
-            arch_element = soup.find(text=lambda x: x and 'architecture' in x.lower())
-            if arch_element:
-                details['architecture'] = arch_element.parent.get_text(strip=True)
-
-            # Dostępne tagi/wersje
-            tags_section = soup.find_all('div', class_='tag')
-            available_tags = []
-            for tag in tags_section:
-                available_tags.append(tag.get_text(strip=True))
-            details['available_tags'] = available_tags
-
-        except Exception as e:
-            print(f"⚠️ Error getting model details: {e}")
-
-        return details
-
     def scrape_library_page(self, page: int = 1) -> List[Dict[str, Any]]:
-        """Scrape'uje jedną stronę library"""
+        """Scrape one page of the Ollama library"""
         print(f"📄 Scraping library page {page}...")
-
-        params = {'page': page} if page > 1 else {}
-        soup = self.get_page(self.library_url, params)
-
-        if not soup:
-            return []
-
-
-        models = []
-
-        # Nowa struktura strony Ollama
-        model_cards = soup.select('a[href^="/library/"]')
         
-        for card in model_cards:
-            try:
-                # Pobieranie podstawowych informacji
-                name_elem = card.select_one('h3')
-                if not name_elem:
+        url = f"{self.library_url}?page={page}" if page > 1 else self.library_url
+        
+        try:
+            # Load the page and wait for model cards to load
+            self.driver.get(url)
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, 'a[href^="/library/"]'))
+            )
+            
+            # Wait a bit more for dynamic content
+            time.sleep(3)
+            
+            # Find all model cards
+            model_cards = self.driver.find_elements(By.CSS_SELECTOR, 'a[href^="/library/"]')
+            print(f"🔍 Found {len(model_cards)} model cards on page {page}")
+            
+            models = []
+            for card in model_cards[:5]:  # Limit to first 5 for testing
+                try:
+                    model_info = self.extract_model_info(card)
+                    if model_info:
+                        models.append(model_info)
+                        print(f"✅ Added model: {model_info['name']}")
+                except Exception as e:
+                    print(f"⚠️ Error processing model card: {e}")
                     continue
                     
-                name = name_elem.get_text(strip=True)
-                url = urljoin(self.base_url, card['href'])
-                
-                # Pobieranie opisu
-                description_elem = card.select_one('p')
-                description = description_elem.get_text(strip=True) if description_elem else ""
-                
-                # Pobieranie liczby pobrań i innych metadanych
-                meta_elements = card.select('div.text-sm.text-gray-500')
-                pulls = "0"
-                size = "Unknown"
-                updated = "Unknown"
-                
-                for meta in meta_elements:
-                    text = meta.get_text(strip=True).lower()
-                    if 'pull' in text or 'download' in text:
-                        pulls = text
-                    elif 'gb' in text or 'mb' in text:
-                        size = text
-                    elif 'ago' in text or 'updated' in text:
-                        updated = text
-                
-                # Pobieranie tagów
-                tags = []
-                tag_elements = card.select('span.bg-gray-100, span.inline-flex')
-                for tag in tag_elements:
-                    tag_text = tag.get_text(strip=True)
-                    if tag_text and tag_text not in ['Ollama', 'Model', 'Library']:
-                        tags.append(tag_text)
-                
-                models.append({
-                    "name": name,
-                    "url": url,
-                    "pulls": pulls,
-                    "size": size,
-                    "updated": updated,
-                    "description": description,
-                    "tags": tags,
-                    "source": "ollama",
-                    "ollama_command": f"ollama pull {name}",
-                    "scraped_at": time.strftime("%Y-%m-%d %H:%M:%S")
-                })
-                
-            except Exception as e:
-                print(f"⚠️ Error processing model card: {e}")
-                continue
-                
-        return models
+            return models
+            
+        except Exception as e:
+            print(f"❌ Error scraping library page {page}: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
 
     def search_models(self, query: str = "", category: str = "") -> List[Dict[str, Any]]:
-        """Przeszukuje modele według zapytania i kategorii"""
+        """Search for models by query and category"""
         print(f"🔍 Searching for: query='{query}', category='{category}'")
-
-        # Używamy tej samej metody co do scrapowania biblioteki,
-        # ponieważ strona wyszukiwania ma podobną strukturę
+        
+        # For now, we'll just use the library page
+        # The search functionality on Ollama's site is client-side rendered
         return self.scrape_library_page()
 
     def scrape_all_categories(self) -> List[Dict[str, Any]]:

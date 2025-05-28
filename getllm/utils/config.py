@@ -1,4 +1,4 @@
-""
+"""
 Configuration utilities for the getllm application.
 """
 import os
