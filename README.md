@@ -1,16 +1,20 @@
 # getllm
 
-getllm is a Python package for managing LLM models with Ollama integration. It allows you to install, list, set the default model, and update the model list. PyLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
+getllm is a Python package for managing LLM models with Ollama integration and generating Python code. It allows you to install, list, set the default model, update the model list, and generate code using LLM models. GetLLM is part of the PyLama ecosystem and integrates with LogLama as the primary service for centralized logging and environment management.
 
-## Ollama Integration
+## Features
 
-PyLLM provides comprehensive integration with Ollama for managing and using LLM models:
-
+- **Code Generation**: Generate Python code using LLM models
 - **Model Management**: Install, list, and select models
+- **Hugging Face Integration**: Search and install models from Hugging Face
 - **Automatic Model Installation**: Automatically install models when they are not found
 - **Fallback Mechanisms**: Use fallback models when the requested model is not available
 - **Environment Configuration**: Configure Ollama through environment variables
 - **Special Model Handling**: Special installation process for SpeakLeash Bielik models
+- **Mock Mode**: Support for mock mode without requiring Ollama
+- **Interactive Mode**: Interactive CLI for model selection and code generation
+- **Template System**: Generate code with awareness of platform, dependencies, and more
+- **Code Execution**: Execute generated code directly
 
 ## LogLama Integration
 
@@ -66,10 +70,71 @@ User
 
 ---
 
-## Modes
+## Usage
 
-- **CLI**: `getllm <command>`
-- **Interactive**: `getllm -i` or `getllm interactive`
+### Basic Usage
+
+```bash
+# Generate code using the default model
+getllm "create a function to calculate fibonacci numbers"
+
+# Generate and run code
+getllm -r "create a web server with Flask"
+
+# Save generated code to a file
+getllm -s "create a script to download files from URLs"
+
+# Use a specific model
+getllm --model codellama:7b "create a binary search tree implementation"
+
+# Use mock mode (no Ollama required)
+getllm --mock "print hello world"
+
+# Use a model that will be automatically installed if not available
+getllm --model SpeakLeash/bielik-1.5b-v3.0-instruct-gguf "print hello world"
+```
+
+### Model Management
+
+```bash
+# List available models
+getllm list
+
+# Install a model
+getllm install codellama:7b
+
+# List installed models
+getllm installed
+
+# Set default model
+getllm set-default codellama:7b
+
+# Show default model
+getllm default
+
+# Update models list from Ollama
+getllm update
+```
+
+### Hugging Face Integration
+
+```bash
+# Search for models on Hugging Face
+getllm --search bielik
+
+# Update models list from Hugging Face
+getllm --update-hf
+```
+
+### Interactive Mode
+
+```bash
+# Start interactive mode
+getllm -i
+
+# Start interactive mode with mock implementation
+getllm -i --mock
+```
 
 ---
 
@@ -133,6 +198,55 @@ make help
 ---
 
 ## Example Usage
+
+Search polish moel bielik in huggingface
+```bash
+getllm --search bielik
+```
+from huggingface 
+
+```bash
+Searching for models matching 'bielik' on Hugging Face...
+Searching for models matching 'bielik' on Hugging Face...
+? Select a model to install: (Use arrow keys)
+ » speakleash/Bielik-11B-v2.3-Instruct-FP8            Unknown    Downloads: 26,103 |
+   speakleash/Bielik-11B-v2.3-Instruct-GGUF           Unknown    Downloads: 2,203 |
+   speakleash/Bielik-4.5B-v3.0-Instruct-GGUF          Unknown    Downloads: 967 |
+   speakleash/Bielik-7B-Instruct-v0.1-GGUF            Unknown    Downloads: 712 |
+   speakleash/Bielik-1.5B-v3.0-Instruct-GGUF          Unknown    Downloads: 423 |
+   bartowski/Bielik-11B-v2.2-Instruct-GGUF            Unknown    Downloads: 382 |
+   gaianet/Bielik-4.5B-v3.0-Instruct-GGUF             Unknown    Downloads: 338 |
+   second-state/Bielik-1.5B-v3.0-Instruct-GGUF        Unknown    Downloads: 314 |
+   second-state/Bielik-4.5B-v3.0-Instruct-GGUF        Unknown    Downloads: 306 |
+   DevQuasar/speakleash.Bielik-4.5B-v3.0-Instruct-GGUF Unknown    Downloads: 219 |
+   DevQuasar/speakleash.Bielik-1.5B-v3.0-Instruct-GGUF Unknown    Downloads: 219 |
+   gaianet/Bielik-11B-v2.3-Instruct-GGUF              Unknown    Downloads: 173 |
+   tensorblock/Bielik-11B-v2.2-Instruct-GGUF          Unknown    Downloads: 168 |
+   speakleash/Bielik-11B-v2.2-Instruct-GGUF           Unknown    Downloads: 162 |
+   mradermacher/Bielik-11B-v2-i1-GGUF                 Unknown    Downloads: 147 |
+   gaianet/Bielik-1.5B-v3.0-Instruct-GGUF             Unknown    Downloads: 145 |
+   QuantFactory/Bielik-7B-v0.1-GGUF                   Unknown    Downloads: 135 |
+   second-state/Bielik-11B-v2.3-Instruct-GGUF         Unknown    Downloads: 125 |
+   RichardErkhov/speakleash_-_Bielik-11B-v2.1-Instruct-gguf Unknown    Downloads: 113 |
+   mradermacher/Bielik-7B-v0.1-GGUF                   Unknown    Downloads: 94 |
+   Cancel
+```
+
+on local environment
+```bash
+Searching for models matching 'bielik' on Hugging Face...
+Searching for models matching 'bielik' on Hugging Face...
+? Select a model to install: speakleash/Bielik-1.5B-v3.0-Instruct-GGUF          Unknown    Downloads: 423 | 
+? Do you want to install this model now? Yes
+
+Detected SpeakLeash Bielik model: speakleash/Bielik-1.5B-v3.0-Instruct-GGUF
+Starting special installation process...
+
+Found existing Bielik model installation: bielik-custom-1747866289:latest
+Using existing model instead of downloading again.
+Increased API timeout to 120 seconds for Bielik model.
+Updated .env file with model settings: ~/getllm/.env
+```    
 
 ### List available models
 ```bash
