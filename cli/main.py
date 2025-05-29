@@ -3,7 +3,7 @@ import click
 from rich.console import Console
 
 # Import command modules
-from .commands import models, server
+from .commands import models, server, generate, config, chat
 
 # Create main CLI group
 @click.group()
@@ -13,7 +13,11 @@ from .commands import models, server
               help='Path to log file')
 @click.pass_context
 def cli(ctx: click.Context, debug: bool, log_file: str) -> None:
-    """GetLLM - Command line interface for managing LLM models."""
+    """GetLLM - Command line interface for managing LLM models and generating code.
+    
+    This CLI provides commands for managing LLM models, interacting with the Ollama server,
+    and generating code using installed models.
+    """
     # Ensure context.obj exists and is a dict
     ctx.ensure_object(dict)
     
@@ -35,8 +39,11 @@ def cli(ctx: click.Context, debug: bool, log_file: str) -> None:
 def main() -> None:
     """Entry point for the CLI."""
     # Register command groups
-    models.register_commands(cli)
-    server.register_commands(cli)
+    models.register_commands(cli)      # Model management commands
+    server.register_commands(cli)      # Server management commands
+    generate.register_commands(cli)    # Code generation commands
+    config.register_commands(cli)      # Configuration management commands
+    chat.register_commands(cli)        # Interactive chat commands
     
     # Run the CLI
     cli(obj={})
