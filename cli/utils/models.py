@@ -1,15 +1,21 @@
 """Utility functions for model-related operations in the CLI."""
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Union
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 
-from getllm import ModelManager, ModelInfo
+try:
+    from getllm import ModelManager, ModelInfo
+    MODEL_INFO_AVAILABLE = True
+except ImportError:
+    from getllm import ModelManager
+    MODEL_INFO_AVAILABLE = False
+    ModelInfo = Any  # Type hint fallback
 
 console = Console()
 
 def display_models(
-    models: List[Any],
+    models: List[Union[dict, Any]],
     installed_only: bool = False,
     source: Optional[str] = None,
     limit: Optional[int] = None,
@@ -18,43 +24,76 @@ def display_models(
     """Display a list of models in a formatted table.
     
     Args:
-        models: List of ModelInfo objects to display
+        models: List of model objects or dictionaries to display
         installed_only: If True, only show installed models
         source: Filter models by source (e.g., 'huggingface', 'ollama')
         limit: Maximum number of models to display
+        show_sizes: Whether to show model sizes in the output
     """
     if not models:
         console.print("[yellow]No models found.[/yellow]")
         return
     
-    # Filter models
+    # Initialize model manager
+    try:
+        manager = ModelManager()
+    except Exception as e:
+        console.print(f"[yellow]Warning: Could not initialize ModelManager: {e}[/yellow]")
+        manager = None
+    
+    # Process models
     filtered_models = []
-    manager = ModelManager()
     
     for model in models:
-        # Handle both ModelInfo objects and dictionaries
-        if hasattr(model, 'id'):
-            # ModelInfo object
-            model_id = model.id
-            model_source = model.source.value if hasattr(model.source, 'value') else str(model.source)
-            model_dict = {
-                'id': model_id,
-                'name': getattr(model, 'name', ''),
-                'source': model_source,
-                'type': model.model_type.value if hasattr(model, 'model_type') and model.model_type else 'N/A',
-                'installed': manager.is_model_installed(model_id),
-                'sizes': getattr(model, 'sizes', [])
-            }
-        else:
-            # Dictionary
-            model_dict = {
-                'id': str(model.get('id', '')),
-                'name': str(model.get('name', '')),
-                'source': str(model.get('source', 'unknown')),
-                'type': str(model.get('type', model.get('model_type', 'N/A'))),
-                'installed': manager.is_model_installed(model.get('id', '')),
-                'sizes': model.get('sizes', [])
-            }
+        model_dict = {}
+        
+        try:
+            # Handle dictionaries
+            if isinstance(model, dict):
+                model_dict = {
+                    'id': str(model.get('id', '')),
+                    'name': str(model.get('name', '')),
+                    'description': str(model.get('description', '')),
+                    'source': str(model.get('source', 'unknown')),
+                    'type': str(model.get('type', model.get('model_type', 'N/A'))),
+                    'installed': manager.is_model_installed(model.get('id', '')) if manager else False,
+                    'sizes': model.get('sizes', [])
+                }
+            # Handle ModelInfo objects if available
+            elif MODEL_INFO_AVAILABLE and isinstance(model, ModelInfo):
+                model_id = getattr(model, 'id', '')
+                model_source = model.source.value if hasattr(model, 'source') and hasattr(model.source, 'value') else 'unknown'
+                model_dict = {
+                    'id': model_id,
+                    'name': getattr(model, 'name', ''),
+                    'description': getattr(model, 'description', ''),
+                    'source': model_source,
+                    'type': model.model_type.value if hasattr(model, 'model_type') and model.model_type else 'N/A',
+                    'installed': manager.is_model_installed(model_id) if manager else False,
+                    'sizes': getattr(model, 'sizes', [])
+                }
+            # Fallback for other object types
+            elif hasattr(model, '__dict__'):
+                model_dict = {
+                    'id': str(getattr(model, 'id', '')),
+                    'name': str(getattr(model, 'name', '')),
+                    'description': str(getattr(model, 'description', '')),
+                    'source': str(getattr(model, 'source', 'unknown')),
+                    'type': str(getattr(model, 'type', getattr(model, 'model_type', 'N/A'))),
+                    'installed': manager.is_model_installed(getattr(model, 'id', '')) if manager else False,
+                    'sizes': getattr(model, 'sizes', [])
+                }
+            else:
+                console.print(f"[yellow]Warning: Unknown model format: {type(model)}[/yellow]")
+                continue
+                
+        except Exception as e:
+            console.print(f"[yellow]Warning: Error processing model {model}: {e}[/yellow]")
+            continue
+            
+        # Skip if we couldn't create a valid model dict
+        if not model_dict.get('id') and not model_dict.get('name'):
+            continue
         
         # Apply filters
         if installed_only and not model_dict['installed']:

@@ -9,8 +9,20 @@ LLM models for use with the Ollama API.
 
 __version__ = "0.1.0"
 
+# Import core exceptions
+from .exceptions import (
+    GetLLMError,
+    ModelError,
+    ModelNotFoundError,
+    ModelInstallationError,
+    ModelQueryError,
+    ConfigurationError,
+    AuthenticationError,
+    ValidationError
+)
+
 # Import from the getllm subpackage
-from getllm.getllm.models import (
+from .models import (
     ModelManager,
     HuggingFaceModelManager,
     OllamaModelManager,
@@ -28,7 +40,9 @@ from getllm.getllm.models import (
     load_huggingface_models_from_cache,
     load_ollama_models_from_cache
 )
-from getllm.getllm.ollama import (
+
+# Import Ollama integration
+from .ollama import (
     OllamaServer as OllamaIntegration,
     get_ollama_integration,
     start_ollama_server,
@@ -38,11 +52,8 @@ from getllm.getllm.ollama import (
     OllamaError,
     OllamaInstallationError,
     OllamaStartupError,
-    ModelNotFoundError,
-    ModelInstallationError,
     ModelGenerationError,
     APIError,
-    AuthenticationError,
     RateLimitExceededError,
     InsufficientDiskSpaceError,
     ModelValidationError

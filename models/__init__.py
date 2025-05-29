@@ -44,6 +44,8 @@ if missing:
 # Import the main components
 from .manager import ModelManager
 from .constants import DEFAULT_MODELS, DEFAULT_HF_MODELS
+from .huggingface.manager import HuggingFaceModelManager, get_hf_model_manager
+from .huggingface.cache import load_huggingface_models_from_cache, update_huggingface_models_cache
 from .utils import (
     get_models_dir,
     get_models_metadata_path,
@@ -55,7 +57,6 @@ from .utils import (
     install_model,
     list_installed_models,
     get_model_metadata,
-    load_huggingface_models_from_cache,
     load_ollama_models_from_cache,
     save_models_to_json,
     load_models_from_json,
@@ -66,28 +67,69 @@ from .utils import (
 update_models_metadata = save_models_to_json
 update_models_from_ollama = load_ollama_models_from_cache
 update_models_from_huggingface = load_huggingface_models_from_cache
+update_huggingface_models_cache = update_huggingface_models_cache
 
 # Import additional components
-from .huggingface import (
-    search_huggingface_models,
-    interactive_model_search,
-    update_huggingface_models_cache
+# Import these at the end to avoid circular imports
+def _import_huggingface():
+    from .huggingface import search_huggingface_models
+    from .huggingface.cache import update_huggingface_models_cache, load_huggingface_models_from_cache
+    
+    return {
+        'search_huggingface_models': search_huggingface_models,
+        'update_huggingface_models_cache': update_huggingface_models_cache,
+        'load_huggingface_models_from_cache': load_huggingface_models_from_cache
+    }
+
+# Import Ollama components
+from .ollama.manager import (
+    get_ollama_model_manager,
+    OllamaModelManager
 )
-from .ollama import (
-    update_ollama_models_cache,
-    list_ollama_models,
-    install_ollama_model
-)
+
+# Create a default manager instance
+ollama_manager = get_ollama_model_manager()
+
+# Define wrapper functions for backward compatibility
+def update_ollama_models_cache():
+    """Update the cache of available Ollama models."""
+    return ollama_manager._fetch_models_from_api() is not None
+
+def list_ollama_models():
+    """List all available Ollama models."""
+    return ollama_manager.list_models()
+
+def install_ollama_model(model_name: str, **kwargs):
+    """Install an Ollama model."""
+    return ollama_manager.install_model(model_name, **kwargs)
+
+def search_ollama_models(query: str = "", limit: int = 10, **kwargs):
+    """Search for Ollama models."""
+    return ollama_manager.search_models(query=query, limit=limit, **kwargs)
+
+# Import interactive utilities
+from .utils.interactive import interactive_model_search
+
+# Import Hugging Face components after other imports to avoid circular imports
+huggingface_exports = _import_huggingface()
+search_huggingface_models = huggingface_exports['search_huggingface_models']
+update_huggingface_models_cache = huggingface_exports['update_huggingface_models_cache']
+load_huggingface_models_from_cache = huggingface_exports['load_huggingface_models_from_cache']
 
 __all__ = [
     # Main classes
     'ModelManager',
+    'HuggingFaceModelManager',
+    'OllamaModelManager',
+    
+    # Manager instances
+    'ollama_manager',
     
     # Constants
     'DEFAULT_MODELS',
     'DEFAULT_HF_MODELS',
     
-    # Core functions
+    # Functions
     'get_models_dir',
     'get_models_metadata_path',
     'get_hf_models_cache_path',
@@ -101,21 +143,19 @@ __all__ = [
     'save_models_to_json',
     'load_models_from_json',
     'ensure_models_dir',
-    'update_models_metadata',
-    
-    # Hugging Face integration
-    'load_huggingface_models_from_cache',
-    'search_huggingface_models',
     'interactive_model_search',
-    'update_models_from_huggingface',
-    'update_huggingface_models_cache',
     
-    # Ollama integration
-    'load_ollama_models_from_cache',
-    'update_models_from_ollama',
+    # Hugging Face functions
+    'search_huggingface_models',
+    'update_huggingface_models_cache',
+    'load_huggingface_models_from_cache',
+    'get_hf_model_manager',
+    
+    # Ollama functions
     'update_ollama_models_cache',
     'list_ollama_models',
-    'install_ollama_model'
+    'install_ollama_model',
+    'search_ollama_models',
 ]
 
 # Initialize the default model manager instance

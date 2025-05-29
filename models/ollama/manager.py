@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any, Set, Tuple
 import requests
 from requests.exceptions import RequestException
 
-from ...exceptions import ModelError, ModelInstallationError, ModelNotFoundError
+from getllm.exceptions import ModelError, ModelInstallationError, ModelNotFoundError, ModelQueryError
 from ..base import BaseModelManager, ModelMetadata, ModelSource, ModelType
 
 
@@ -208,6 +208,51 @@ class OllamaModelManager(BaseModelManager):
             if hasattr(e, 'response') and e.response is not None and e.response.status_code == 404:
                 raise ModelNotFoundError(f"Model '{model_name}' not found")
             raise ModelError(f"Failed to fetch model info: {e}") from e
+    
+    def search_models(
+        self,
+        query: Optional[str] = None,
+        tags: Optional[List[str]] = None,
+        limit: int = 50,
+        sort: str = "downloads",
+        direction: str = "-1"
+    ) -> List[Dict[str, Any]]:
+        """Search for models in the Ollama library.
+        
+        Args:
+            query: Search query string
+            tags: List of tags to filter by (not currently used in Ollama)
+            limit: Maximum number of results to return
+            sort: Field to sort by (not currently used in Ollama)
+            direction: Sort direction (not currently used in Ollama)
+            
+        Returns:
+            List of model information dictionaries
+            
+        Raises:
+            ModelError: If there's an error searching for models
+        """
+        try:
+            models = self._fetch_models_from_api()
+            
+            # Filter by query if provided
+            if query:
+                query = query.lower()
+                models = [
+                    model for model in models 
+                    if query in model.get("name", "").lower()
+                ]
+            
+            # Apply limit
+            if limit > 0:
+                models = models[:limit]
+                
+            return models
+            
+        except Exception as e:
+            error_msg = f"Failed to search Ollama models: {e}"
+            logger.error(error_msg)
+            raise ModelError(error_msg) from e
     
     def list_models(self) -> List[ModelMetadata]:
         """List all available models.
@@ -441,6 +486,78 @@ class OllamaModelManager(BaseModelManager):
                 "digest": model_info.get("digest")
             }
         )
+        
+    def query(
+        self,
+        prompt: str,
+        model: str = "llama3",
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+        **kwargs
+    ) -> str:
+        """Query the model with a prompt.
+        
+        Args:
+            prompt: The input prompt
+            model: The model to use (default: "llama3")
+            max_tokens: Maximum number of tokens to generate
+            temperature: Sampling temperature (0.0 to 1.0)
+            **kwargs: Additional parameters for the API call
+            
+        Returns:
+            The generated text response
+            
+        Raises:
+            ModelError: If there's an error querying the model
+        """
+        if not self._is_installed:
+            raise ModelError("Ollama is not installed or not in PATH")
+            
+        try:
+            # Ensure the model is available
+            if not self.is_model_installed(model):
+                logger.info(f"Model {model} not found, attempting to pull...")
+                if not self.install_model(model):
+                    raise ModelError(f"Failed to install model: {model}")
+            
+            # Prepare the request data
+            data = {
+                "model": model,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "num_predict": max_tokens,
+                    "temperature": max(0.01, min(1.0, temperature)),
+                }
+            }
+            
+            # Add any additional parameters
+            if "options" in kwargs:
+                data["options"].update(kwargs["options"])
+                del kwargs["options"]
+            data.update(kwargs)
+            
+            # Make the API request
+            response = requests.post(
+                f"{self.base_url}/generate",
+                json=data,
+                timeout=300  # 5 minute timeout
+            )
+            response.raise_for_status()
+            
+            result = response.json()
+            return result.get("response", "").strip()
+            
+        except requests.RequestException as e:
+            error_msg = f"Error querying model {model}: {str(e)}"
+            if hasattr(e, 'response') and e.response is not None:
+                try:
+                    error_detail = e.response.json().get('error', '')
+                    if error_detail:
+                        error_msg += f" - {error_detail}"
+                except:
+                    error_msg += f" - {e.response.text}"
+            raise ModelError(error_msg) from e
 
 
 def get_ollama_model_manager(**kwargs) -> OllamaModelManager:

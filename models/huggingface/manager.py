@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Any, Set
 import requests
 from requests.exceptions import RequestException
 
-from ...exceptions import ModelError, ModelInstallationError, ModelNotFoundError
+from getllm.exceptions import ModelError, ModelInstallationError, ModelNotFoundError
 from ..base import BaseModelManager, ModelMetadata, ModelSource, ModelType
 
 

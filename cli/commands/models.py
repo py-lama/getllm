@@ -10,10 +10,14 @@ from ..utils import (
     display_models,
     install_model_with_progress,
     uninstall_model_with_progress,
-    display_model_info,
-    ollama_models
+    display_model_info
 )
-from getllm import ModelManager, list_models
+from getllm.utils.ollama_models import (
+    load_ollama_models,
+    display_ollama_models,
+    search_ollama_models
+)
+from getllm import ModelManager, get_models
 
 class ListModelsCommand(BaseCommand):
     """Command to list available models."""
@@ -79,11 +83,11 @@ class ListModelsCommand(BaseCommand):
         
         # Handle Ollama models
         if source in ['all', 'ollama']:
-            ollama_models_list = ollama_models.load_ollama_models()
+            ollama_models_list = load_ollama_models()
             
             # Apply search if provided
             if search:
-                ollama_models_list = ollama_models.search_ollama_models(
+                ollama_models_list = search_ollama_models(
                     search, 
                     models=ollama_models_list,
                     case_sensitive=False
@@ -119,14 +123,14 @@ class ListModelsCommand(BaseCommand):
                 else:
                     # If showing all sources, include Ollama models in the general list
                     try:
-                        models = list(list_models() or []) + ollama_models_formatted
+                        models = list(get_models() or []) + ollama_models_formatted
                     except Exception as e:
                         console.print(f"[yellow]Warning: Could not load other models: {e}[/yellow]")
                         models = ollama_models_formatted
             else:
-                models = list(list_models() or [])
+                models = list(get_models() or [])
         else:
-            models = list(list_models() or [])
+            models = list(get_models() or [])
         
         # Filter by source if not 'all'
         if source != 'all':
@@ -163,14 +167,15 @@ class InstallModelCommand(BaseCommand):
         return {
             'name': 'install',
             'help': 'Install a model',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['model_id'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'ID of the model to install (e.g., huggingface/gpt2, ollama/llama2)'
-                    }
-                },
+                    'name': 'model_id',
+                    'type': str,
+                    'required': True,
+                    'help': 'ID of the model to install (e.g., huggingface/gpt2, ollama/llama2)'
+                }
+            ],
+            'options': [
                 {
                     'param_decls': ['--force'],
                     'kwargs': {
@@ -198,13 +203,12 @@ class UninstallModelCommand(BaseCommand):
         return {
             'name': 'uninstall',
             'help': 'Uninstall a model',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['model_id'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'ID of the model to uninstall'
-                    }
+                    'name': 'model_id',
+                    'type': str,
+                    'required': True,
+                    'help': 'ID of the model to uninstall'
                 }
             ]
         }
@@ -226,13 +230,12 @@ class InfoModelCommand(BaseCommand):
         return {
             'name': 'info',
             'help': 'Show detailed information about a model',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['model_id'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'ID of the model to show information for'
-                    }
+                    'name': 'model_id',
+                    'type': str,
+                    'required': True,
+                    'help': 'ID of the model to show information for'
                 }
             ]
         }

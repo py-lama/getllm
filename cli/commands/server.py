@@ -5,7 +5,7 @@ import click
 from rich.console import Console
 
 from ..commands.base import BaseCommand
-from getllm.ollama_integration import get_ollama_integration
+from getllm.ollama_integration.server import OllamaServer
 
 class StartServerCommand(BaseCommand):
     """Command to start the Ollama server."""
@@ -41,8 +41,8 @@ class StartServerCommand(BaseCommand):
         
         try:
             with console.status("[green]Starting Ollama server...[/green]"):
-                server = get_ollama_integration()
-                server.start_server(host=host, port=port)
+                server = OllamaServer()
+                server.start(host=host, port=port)
                 
             console.print(f"[green]✓ Ollama server started on {host}:{port}[/green]")
         except Exception as e:
@@ -66,8 +66,8 @@ class StopServerCommand(BaseCommand):
         
         try:
             with console.status("[green]Stopping Ollama server...[/green]"):
-                server = get_ollama_integration()
-                server.stop_server()
+                server = OllamaServer()
+                server.stop()
                 
             console.print("[green]✓ Ollama server stopped[/green]")
         except Exception as e:
@@ -88,15 +88,12 @@ class ServerStatusCommand(BaseCommand):
     def execute(self, **kwargs) -> None:
         """Execute the server status command."""
         console = Console()
-        server = get_ollama_integration()
+        server = OllamaServer()
         
         try:
-            status = server.get_status()
-            
-            if status['running']:
-                console.print(f"[green]✓ Ollama server is running on {status['url']}[/green]")
-                console.print(f"  - Version: {status.get('version', 'unknown')}")
-                console.print(f"  - Uptime: {status.get('uptime', 'unknown')}")
+            if server.is_running():
+                console.print("[green]✓ Ollama server is running[/green]")
+                console.print(f"  - URL: {server.base_url}")
             else:
                 console.print("[yellow]Ollama server is not running[/yellow]")
         except Exception as e:

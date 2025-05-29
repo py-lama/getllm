@@ -66,13 +66,12 @@ class ConfigGetCommand(ConfigCommand):
         return {
             'name': 'get',
             'help': 'Get a configuration value',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['key'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'Configuration key to get'
-                    }
+                    'name': 'key',
+                    'type': str,
+                    'required': True,
+                    'help': 'Configuration key to get'
                 }
             ]
         }
@@ -96,20 +95,18 @@ class ConfigSetCommand(ConfigCommand):
         return {
             'name': 'set',
             'help': 'Set a configuration value',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['key'],
-                    'kwargs': {
-                        'type': click.Choice(list(DEFAULT_CONFIG.keys())),
-                        'help': 'Configuration key to set'
-                    }
+                    'name': 'key',
+                    'type': click.Choice(list(DEFAULT_CONFIG.keys())),
+                    'required': True,
+                    'help': 'Configuration key to set'
                 },
                 {
-                    'param_decls': ['value'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'Value to set'
-                    }
+                    'name': 'value',
+                    'type': str,
+                    'required': True,
+                    'help': 'Value to set'
                 }
             ]
         }

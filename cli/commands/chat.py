@@ -9,7 +9,7 @@ from rich.markdown import Markdown
 
 from ..commands.base import BaseCommand
 from ..utils import display_model_info
-from getllm import ModelManager, list_models
+from getllm import ModelManager, get_models
 
 class ChatCommand(BaseCommand):
     """Command to start an interactive chat with a model."""
@@ -72,7 +72,7 @@ class ChatCommand(BaseCommand):
     def _select_model(self) -> Optional[str]:
         """Interactively select a model from available models."""
         console = Console()
-        models = list_models()
+        models = get_models()
         
         if not models:
             console.print("[yellow]No models available. Install a model first.[/yellow]")
@@ -175,7 +175,7 @@ class ChatCommand(BaseCommand):
                     elif cmd == 'models':
                         from ..utils import display_models
                         display_models(
-                            models=list_models(),
+                            models=get_models(),
                             installed_only=True
                         )
                         continue

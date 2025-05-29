@@ -13,7 +13,7 @@ from pathlib import Path
 from .base import BaseModel, BaseModelManager, ModelMetadata, ModelSource, ModelType
 from .huggingface.manager import HuggingFaceModelManager, get_hf_model_manager
 from .ollama.manager import OllamaModelManager, get_ollama_model_manager
-from ..exceptions import ModelError, ModelNotFoundError, ModelInstallationError
+from getllm.exceptions import ModelError, ModelNotFoundError, ModelInstallationError, ModelQueryError
 
 logger = logging.getLogger(__name__)
 
@@ -455,6 +455,70 @@ class ModelManager:
             The name of the default model.
         """
         return self.default_model
+    
+    def query(
+        self,
+        prompt: str,
+        model: Optional[str] = None,
+        source: Optional[str] = None,
+        max_tokens: int = 1024,
+        temperature: float = 0.7,
+        **kwargs
+    ) -> str:
+        """Query a model with a prompt.
+        
+        Args:
+            prompt: The input prompt to send to the model
+            model: The model to use (defaults to the default model)
+            source: The model source ('ollama' or 'huggingface'). If not specified,
+                   will try to determine from the model name or use the default source.
+            max_tokens: Maximum number of tokens to generate
+            temperature: Sampling temperature (0.0 to 1.0)
+            **kwargs: Additional parameters to pass to the model
+            
+        Returns:
+            The generated text response
+            
+        Raises:
+            ModelError: If there's an error querying the model
+            ValueError: If the model is not found or the source is not supported
+        """
+        # Use default model if none specified
+        if model is None:
+            model = self.default_model
+            if not model:
+                raise ValueError("No model specified and no default model set")
+        
+        # Try to determine source from model name if not specified
+        if source is None and ":" in model:
+            source, model = model.split(":", 1)
+        
+        # Get the appropriate model manager
+        try:
+            manager = self._get_manager(source)
+        except ValueError as e:
+            raise ValueError(
+                f"Could not determine model source for '{model}'. "
+                f"Please specify source with source='ollama' or source='huggingface'"
+            ) from e
+        
+        # Check if the model is installed
+        if not manager.is_model_installed(model):
+            logger.info(f"Model {model} not found, attempting to install...")
+            if not manager.install_model(model):
+                raise ModelError(f"Failed to install model: {model}")
+        
+        # Delegate the query to the model manager
+        try:
+            return manager.query(
+                prompt=prompt,
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                **kwargs
+            )
+        except Exception as e:
+            raise ModelError(f"Error querying model {model}: {str(e)}") from e
     
     def update_models_from_remote(self, source: str = "ollama", 
                                 query: str = None, 

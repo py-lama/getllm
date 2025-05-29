@@ -16,14 +16,15 @@ class GenerateCodeCommand(BaseCommand):
         return {
             'name': 'generate',
             'help': 'Generate code using an installed model',
-            'options': [
+            'args': [
                 {
-                    'param_decls': ['prompt'],
-                    'kwargs': {
-                        'type': str,
-                        'help': 'Prompt describing the code to generate'
-                    }
-                },
+                    'name': 'prompt',
+                    'type': str,
+                    'required': True,
+                    'help': 'Prompt describing the code to generate'
+                }
+            ],
+            'options': [
                 {
                     'param_decls': ['--model', '-m'],
                     'kwargs': {
