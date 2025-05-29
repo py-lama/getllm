@@ -7,25 +7,39 @@ This package provides functionality for managing, installing, and configuring
 LLM models from various sources including Ollama and Hugging Face.
 """
 
-from .models import ModelManager, ModelMetadataManager
-from .models.huggingface import HuggingFaceModelManager
-from .models.ollama import OllamaModelManager
-from .utils import (
-    get_models_dir,
+import os
+import logging
+from typing import List, Dict, Any, Optional
+
+from .models import (
+    ModelManager,
+    ModelMetadataManager,
+    HuggingFaceModelManager,
+    OllamaModelManager,
+    get_models,
+    get_huggingface_models,
+    update_models_from_huggingface,
     get_default_model,
     set_default_model,
-    get_models_metadata_path,
-    get_central_env_path
+    install_model,
+    list_installed_models,
+    search_huggingface_models,
+    interactive_model_search,
+    update_models_from_ollama
 )
 
-# For backward compatibility
-from .ollama_integration import (
-    OllamaIntegration,
+from .ollama import (
+    OllamaServer,
     get_ollama_integration,
     start_ollama_server,
     install_ollama_model,
-    list_ollama_models
+    list_ollama_models,
+    OllamaError,
+    ModelNotFoundError
 )
+
+# For backward compatibility (deprecated)
+OllamaIntegration = OllamaServer
 
 __version__ = '0.2.0'
 
@@ -35,6 +49,7 @@ __all__ = [
     'HuggingFaceModelManager',
     'OllamaModelManager',
     'ModelMetadataManager',
+    'OllamaIntegration',
     
     # Utility functions
     'get_models_dir',
@@ -43,10 +58,10 @@ __all__ = [
     'get_models_metadata_path',
     'get_central_env_path',
     
-    # Ollama integration (legacy)
-    'OllamaIntegration',
-    'get_ollama_integration',
-    'start_ollama_server',
-    'install_ollama_model',
-    'list_ollama_models'
+    # Ollama integration (legacy - deprecated)
+    'OllamaIntegration',  # Deprecated, use OllamaServer instead
+    'get_ollama_integration',  # Deprecated, use OllamaServer directly
+    'start_ollama_server',  # Deprecated, use OllamaServer directly
+    'install_ollama_model',  # Deprecated, use OllamaServer.install_model()
+    'list_ollama_models'  # Deprecated, use OllamaServer.list_models()
 ]

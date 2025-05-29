@@ -1,6 +1,6 @@
 # Makefile for PyLLM
 
-.PHONY: all setup clean test lint format run help venv docker-test docker-build docker-clean build publish test-package update-version publish-test build-and-publish
+.PHONY: all setup clean test lint format run help venv docker-dev docker-test docker-run docker-clean docker-build docker-publish build publish test-package update-version publish-test build-and-publish
 
 # Default values
 PORT ?= 8001
@@ -152,6 +152,41 @@ update: venv
 	@. venv/bin/activate && pip install --upgrade pip setuptools wheel
 	@. venv/bin/activate && pip install --upgrade -e .
 	@. venv/bin/activate && pip install --upgrade -r requirements-dev.txt 2>/dev/null || echo "No requirements-dev.txt found, skipping..."
+
+# Docker development environment
+docker-build:
+	@echo "Building development Docker image..."
+	docker build -f Dockerfile.dev -t pyllm-dev .
+
+docker-dev: docker-build
+	@echo "Starting development container..."
+	docker run -it --rm \
+		-v $(PWD):/app \
+		-p 8001:8001 \
+		--name pyllm-dev \
+		pyllm-dev
+
+docker-test: docker-build
+	@echo "Running tests in Docker..."
+	docker run -it --rm \
+		-v $(PWD):/app \
+		pyllm-dev \
+		bash -c "pytest tests/"
+
+docker-run: docker-build
+	@echo "Running application in Docker..."
+	docker run -it --rm \
+		-v $(PWD):/app \
+		-p 8001:8001 \
+		--name pyllm-run \
+		pyllm-dev \
+		uvicorn getllm.api:app --host 0.0.0.0 --port 8001
+
+docker-clean:
+	@echo "Cleaning Docker resources..."
+	docker ps -a -q --filter "name=pyllm-*" | xargs -r docker rm -f 2>/dev/null || true
+	docker images -q pyllm-* | xargs -r docker rmi -f 2>/dev/null || true
+	docker volume ls -q -f dangling=true | xargs -r docker volume rm 2>/dev/null || true
 	@. venv/bin/activate && pip install --upgrade -e ".[test]" 2>/dev/null || echo "No test extras found, skipping..."
 	@echo "Dependencies updated successfully!"
 

@@ -158,7 +158,7 @@ class OllamaModelManager:
             modelfile_path = os.path.join(temp_dir, "Modelfile")
             with open(modelfile_path, 'w') as f:
                 f.write(f"FROM {temp_dir}\n")
-                f.write("TEMPLATE """{{ if .System }}...{{ end }}{{ if .Prompt }}{{ .Prompt }}{{ end }}""")\n")
+                f.write('TEMPLATE """{{ if .System }}...{{ end }}{{ if .Prompt }}{{ .Prompt }}{{ end }}"""\n')
             
             # Build the model using Ollama
             cmd = f"{self.ollama_path} create {model_name} -f {modelfile_path}"

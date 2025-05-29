@@ -441,13 +441,13 @@ install_model("deepseek-coder:6.7b")
 ### Direct Ollama Integration
 
 ```python
-from getllm import OllamaIntegration, get_ollama_integration, start_ollama_server
+from getllm import OllamaServer
 
 # Start the Ollama server if it's not already running
-ollama = start_ollama_server()
+ollama = OllamaServer()
 
-# Or create an OllamaIntegration instance with a specific model
-ollama = get_ollama_integration(model="codellama:7b")
+# Or create an OllamaServer instance with a specific model
+ollama = OllamaServer(model="codellama:7b")
 
 # Check if the model is available
 if ollama.check_model_availability():

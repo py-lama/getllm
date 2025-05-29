@@ -52,7 +52,7 @@ def choose_model(action_desc, callback):
     models_list = models.get_models()
     
     # Get installed models from Ollama
-    from getllm.ollama_integration import get_ollama_integration
+    from getllm.ollama.api import get_ollama_integration
     ollama = get_ollama_integration()
     
     # Only try to get installed models if Ollama is installed
@@ -184,13 +184,13 @@ def choose_model(action_desc, callback):
 def generate_code_interactive(mock_mode=False):
     """Interactive code generation function"""
     from getllm.cli import get_template, extract_python_code, execute_code, save_code_to_file
-    from getllm.ollama_integration import get_ollama_integration
+    from getllm.ollama import OllamaServer
     import platform
     
     # Mock implementation for testing without Ollama
     if mock_mode:
-        from getllm.cli import MockOllamaIntegration
-        runner = MockOllamaIntegration()
+        from getllm.cli import MockOllamaServer
+        runner = MockOllamaServer()
         print("Using mock mode (no Ollama required)")
     else:
         # Get the default model
@@ -199,9 +199,9 @@ def generate_code_interactive(mock_mode=False):
             print("No default model set. Please set a default model first.")
             return
             
-        # Check if the model is installed
-        runner = get_ollama_integration(model=model_name)
-        installed_models = runner.list_installed_models()
+        # Create an instance of OllamaServer with the default model and check if it's installed
+        runner = OllamaServer(model=model_name)
+        installed_models = runner.list_models()
         model_installed = any(m.get('name', '').startswith(model_name) for m in installed_models)
         
         if not model_installed:

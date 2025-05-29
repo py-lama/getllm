@@ -16,11 +16,14 @@ from getllm.getllm.models import (
     list_installed_models,
     update_models_from_ollama
 )
-from getllm.getllm.ollama_integration import (
+from getllm.getllm.ollama import (
+    OllamaServer as OllamaIntegration,
     get_ollama_integration,
     start_ollama_server,
     install_ollama_model,
     list_ollama_models,
+    OllamaError,
+    ModelNotFoundError
 )
 
 __all__ = [

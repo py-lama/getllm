@@ -30,22 +30,30 @@ class OllamaModelManager(BaseModelManager):
         self.cache_file = self.models_dir / "ollama_models.json"
         self.models_metadata_file = get_models_metadata_path()
     
-    def get_available_models(self, limit: Optional[int] = None) -> List[Dict]:
+    def get_available_models(self, limit: Optional[int] = None, force_refresh: bool = False) -> List[Dict]:
         """
         Get available Ollama models.
         
         Args:
             limit: Maximum number of models to return. If None, returns all available models.
+            force_refresh: If True, force refresh the cache
             
         Returns:
             List of model dictionaries with metadata.
         """
-        # First try to load from cache
-        cached_models = self._load_cached_models()
-        if cached_models:
-            return cached_models[:limit] if limit is not None else cached_models
+        # Try to load from cache if not forcing refresh
+        if not force_refresh:
+            cached_models = self._load_cached_models()
+            if cached_models:
+                return cached_models[:limit] if limit is not None else cached_models
         
-        # Fall back to default models if cache is empty
+        # Try to update the cache
+        if self.update_models_cache():
+            cached_models = self._load_cached_models()
+            if cached_models:
+                return cached_models[:limit] if limit is not None else cached_models
+        
+        # Fall back to default models if all else fails
         return self.DEFAULT_MODELS[:limit] if limit is not None else self.DEFAULT_MODELS
     
     def install_model(self, model_name: str) -> bool:
@@ -79,24 +87,35 @@ class OllamaModelManager(BaseModelManager):
             return []
     
     def update_models_cache(self) -> bool:
-        """Update the local cache of Ollama models."""
+        """Update the local cache of Ollama models by scraping the Ollama library."""
         try:
-            result = subprocess.run(
-                ["ollama", "list", "--json"],
-                capture_output=True,
-                text=True
-            )
+            from ..scrapers.ollama_scraper import OllamaModelsScraper
             
-            if result.returncode != 0:
-                return False
+            print("🔄 Fetching latest Ollama models...")
+            with OllamaModelsScraper() as scraper:
+                models = scraper.get_models()
                 
-            models = json.loads(result.stdout)
-            with open(self.cache_file, 'w', encoding='utf-8') as f:
-                json.dump(models, f, indent=2)
+                if not models:
+                    print("⚠️ No models found. Using cached data if available.")
+                    return False
                 
-            return True
-            
-        except (subprocess.SubprocessError, json.JSONDecodeError, IOError):
+                # Ensure the cache directory exists
+                self.models_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Save models to cache file
+                with open(self.cache_file, 'w', encoding='utf-8') as f:
+                    json.dump({
+                        'models': models,
+                        'count': len(models),
+                        'source': 'ollama',
+                        'updated_at': time.strftime('%Y-%m-%d %H:%M:%S')
+                    }, f, indent=2)
+                
+                print(f"✅ Successfully cached {len(models)} Ollama models")
+                return True
+                
+        except Exception as e:
+            print(f"❌ Error updating Ollama models cache: {e}")
             return False
     
     def _load_cached_models(self) -> List[Dict]:
@@ -106,36 +125,57 @@ class OllamaModelManager(BaseModelManager):
         
         try:
             with open(self.cache_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+                data = json.load(f)
+                # Handle both old and new cache formats
+                if isinstance(data, list):
+                    return data
+                elif isinstance(data, dict) and 'models' in data:
+                    return data['models']
+                return []
+        except (json.JSONDecodeError, IOError) as e:
+            print(f"⚠️ Error loading cached models: {e}")
             return []
     
-    def search_models(self, query: str = None, limit: int = 20) -> List[Dict]:
+    def search_models(self, query: str = None, limit: int = 20, force_refresh: bool = False) -> List[Dict]:
         """
         Search for models matching a query string.
         
         Args:
             query: The search query string
             limit: Maximum number of models to return
+            force_refresh: If True, force refresh the cache before searching
             
         Returns:
             List of model dictionaries matching the query
         """
-        # First try to get models from the cache
-        models = self.get_available_models()
+        # Get models, potentially forcing a refresh
+        models = self.get_available_models(force_refresh=force_refresh)
         
         # If no query, return all models up to the limit
         if not query:
             return models[:limit]
         
-        # Filter models by query
+        # Filter models by query across multiple fields
         query = query.lower()
-        filtered_models = [
-            model for model in models
-            if (query in model.get('name', '').lower() or
-                query in model.get('description', '').lower() or
-                query in model.get('id', '').lower())
-        ]
+        filtered_models = []
+        
+        for model in models:
+            # Check if query matches any of the model's fields
+            search_fields = [
+                model.get('name', '').lower(),
+                model.get('description', '').lower(),
+                model.get('full_name', '').lower(),
+                model.get('tag', '').lower(),
+                ' '.join(model.get('metadata', {}).get('tags', [])).lower()
+            ]
+            
+            # Check if query is in any of the search fields
+            if any(query in field for field in search_fields if field):
+                filtered_models.append(model)
+                
+                # Early exit if we've reached the limit
+                if len(filtered_models) >= limit:
+                    break
         
         return filtered_models[:limit]
     

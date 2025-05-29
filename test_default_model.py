@@ -6,7 +6,7 @@ import sys
 import json
 from pathlib import Path
 from getllm.models import get_default_model, set_default_model
-from getllm.ollama_integration import get_ollama_integration
+from getllm.ollama.api import get_ollama_integration
 
 def test_default_model():
     """Test getting and setting the default model."""

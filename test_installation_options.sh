@@ -67,15 +67,15 @@ run_command_timeout "echo 'Cancel' | getllm --mock --search bielik"
 
 # Test the Ollama server check
 section "Ollama Server Check"
-run_command "python -c 'from getllm.ollama_integration import OllamaIntegration; print(\"Server running:\", OllamaIntegration().check_server_running())'"
+run_command "python -c 'from getllm.ollama import OllamaServer; print(\"Server running:\", OllamaServer().check_server_running())'"
 
 # Test the Ollama installation check
 section "Ollama Installation Check"
-run_command "python -c 'from getllm.ollama_integration import OllamaIntegration; print(\"Ollama installed:\", OllamaIntegration().is_ollama_installed)'"
+run_command "python -c 'from getllm.ollama import OllamaServer; print(\"Ollama installed:\", OllamaServer().is_ollama_installed)'"
 
 # Test the bexy sandbox setup (non-interactive test)
 section "Bexy Sandbox Setup Test"
-run_command "python -c 'from getllm.ollama_integration import OllamaIntegration; print(\"Bexy path exists:\", __import__(\"os\").path.isdir(__import__(\"os\").path.join(__import__(\"os\").path.dirname(__import__(\"os\").path.dirname(__import__(\"os\").path.dirname(OllamaIntegration.__module__))), \"bexy\")))'"
+run_command "python -c 'from getllm.ollama import OllamaServer; print(\"Bexy path exists:\", __import__(\"os\").path.isdir(__import__(\"os\").path.join(__import__(\"os\").path.dirname(__import__(\"os\").path.dirname(__import__(\"os\").path.dirname(OllamaServer.__module__))), \"bexy\")))'"
 
 # Test model installation with mock mode
 section "Model Installation with Mock Mode"

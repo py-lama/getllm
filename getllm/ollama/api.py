@@ -13,9 +13,9 @@ logger = logging.getLogger('getllm.ollama.api')
 # Global server instance for convenience
 _global_server = None
 
-def get_ollama_integration(model: str = None) -> OllamaServer:
+def get_ollama_server(model: str = None) -> OllamaServer:
     """
-    Get an OllamaIntegration instance with the specified model.
+    Get an OllamaServer instance with the specified model.
     
     Args:
         model: Optional model name to use
@@ -24,6 +24,9 @@ def get_ollama_integration(model: str = None) -> OllamaServer:
         An OllamaServer instance
     """
     return OllamaServer(model=model)
+
+# For backward compatibility
+get_ollama_integration = get_ollama_server
 
 def start_ollama_server() -> OllamaServer:
     """

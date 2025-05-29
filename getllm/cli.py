@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Import from getllm modules
 from getllm import models
-from getllm.ollama_integration import OllamaIntegration, get_ollama_integration
+from getllm.ollama import OllamaServer, get_ollama_server
 
 # Create .getllm directory if it doesn't exist
 PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.getllm')
@@ -199,8 +199,8 @@ class PythonSandbox:
                 pass
 
 # Mock implementation for testing without Ollama
-class MockOllamaIntegration:
-    """Mock implementation of OllamaIntegration for testing."""
+class MockOllamaServer:
+    """Mock implementation of OllamaServer for testing."""
     def __init__(self, model=None):
         self.model = model or "mock-model"
     
@@ -591,12 +591,11 @@ def main():
                 print("Alternatively, use --mock for testing without Ollama.")
                 return 1
         
-        # Create OllamaIntegration or MockOllamaIntegration
-        if mock_mode:
-            print("Using mock mode (no Ollama required)")
-            runner = MockOllamaIntegration(model=model)
+        # Create OllamaServer or MockOllamaServer
+        if not mock_mode:
+            runner = get_ollama_server(model=model)
         else:
-            runner = get_ollama_integration(model=model)
+            runner = MockOllamaServer(model=model)
         
         # Prepare template arguments
         template_args = {}

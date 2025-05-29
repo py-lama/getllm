@@ -1,51 +1,97 @@
 """
-Ollama Integration for PyLLM
+Ollama Server for PyLLM
 
-This package provides integration with Ollama for high-quality code generation.
+This package provides a server interface for Ollama for high-quality code generation.
 It handles model management, automatic installation, and fallback mechanisms.
 """
 
+import warnings
+from typing import Optional, List, Dict, Any
+
 from .models import OllamaModelManager
 from .server import OllamaServer
-from .exceptions import OllamaError, ModelNotFoundError, InstallationError
-from .api import query_ollama, list_ollama_models, install_ollama_model
+from .api import get_ollama_server as _get_ollama_server, query_ollama, list_ollama_models, install_ollama_model
+from .exceptions import (
+    OllamaError,
+    OllamaInstallationError,
+    OllamaStartupError,
+    ModelNotFoundError,
+    ModelInstallationError,
+    ModelGenerationError,
+    APIError,
+    AuthenticationError,
+    RateLimitExceededError,
+    InsufficientDiskSpaceError,
+    ModelValidationError
+)
 
-# For backward compatibility
-OllamaIntegration = OllamaServer  # Alias for backward compatibility
-
-def get_ollama_integration(model: str = None):
+def get_ollama_server(model: Optional[str] = None) -> OllamaServer:
     """
-    Get an OllamaIntegration instance with the specified model.
+    Get an OllamaServer instance with the specified model.
     
     Args:
         model: Optional model name to use
         
     Returns:
-        An OllamaIntegration instance
+        An OllamaServer instance
     """
-    return OllamaServer(model=model)
+    return _get_ollama_server(model=model)
 
-def start_ollama_server():
+def get_ollama_integration(model: Optional[str] = None) -> OllamaServer:
     """
-    Start the Ollama server and return an OllamaIntegration instance.
+    Deprecated. Use get_ollama_server() instead.
+    
+    Args:
+        model: Optional model name to use
+        
+    Returns:
+        An OllamaServer instance
+    """
+    warnings.warn(
+        "get_ollama_integration() is deprecated and will be removed in a future version. "
+        "Use get_ollama_server() instead.",
+        DeprecationWarning,
+        stacklevel=2
+    )
+    return get_ollama_server(model=model)
+
+def start_ollama_server() -> OllamaServer:
+    """
+    Start the Ollama server and return an OllamaServer instance.
+    
+    Note: This function is kept for backward compatibility.
+    Consider using OllamaServer directly instead.
     
     Returns:
-        An OllamaIntegration instance with the server started
+        An OllamaServer instance with the server started
     """
     server = OllamaServer()
     server.start()
     return server
 
+# For backward compatibility (deprecated, will be removed in a future version)
+OllamaIntegration = OllamaServer  # Alias for backward compatibility (deprecated)
+
 __all__ = [
-    'OllamaIntegration',
     'OllamaServer',
     'OllamaModelManager',
+    'get_ollama_server',
     'OllamaError',
+    'OllamaInstallationError',
+    'OllamaStartupError',
     'ModelNotFoundError',
-    'InstallationError',
-    'get_ollama_integration',
-    'start_ollama_server',
+    'ModelInstallationError',
+    'ModelGenerationError',
+    'APIError',
+    'AuthenticationError',
+    'RateLimitExceededError',
+    'InsufficientDiskSpaceError',
+    'ModelValidationError',
     'query_ollama',
     'list_ollama_models',
     'install_ollama_model',
+    'start_ollama_server',
+    # Deprecated, included for backward compatibility
+    'OllamaIntegration',
+    'get_ollama_integration',
 ]

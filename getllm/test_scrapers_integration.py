@@ -8,16 +8,16 @@ import sys
 import json
 
 # Import the model scrapers
-from OllamaModelsScraper import OllamaModelsScraper
-from HuggingFaceModelsScraper import HuggingFaceModelsScraper
-from UnifiedModelsManager import UnifiedModelsManager
+from getllm.scrapers.ollama_scraper import OllamaModelsScraper
+from getllm.scrapers.huggingface_scraper import HuggingFaceModelsScraper
+from getllm.scrapers.unified_models_manager import UnifiedModelsManager
 
 # Import the integration modules
-from model_scrapers import scrape_huggingface_models, scrape_ollama_models, are_scrapers_available
+from getllm.scrapers import scrape_huggingface_models, scrape_ollama_models, are_scrapers_available
 
 # Import the models functions
-from models import update_huggingface_models_cache, update_models_from_ollama, update_models_metadata
-from models import load_huggingface_models_from_cache, load_ollama_models_from_cache
+from getllm.models import update_huggingface_models_cache, update_models_from_ollama, update_models_metadata
+from getllm.models import load_huggingface_models_from_cache, load_ollama_models_from_cache
 
 
 def test_direct_scrapers():
