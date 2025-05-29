@@ -388,6 +388,7 @@ def main():
     parser.add_argument("--mock", action="store_true", help="Use mock mode (no Ollama required)")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode with verbose logging")
     parser.add_argument("--log-file", help="Specify custom log file path")
+    parser.add_argument("--version", action="store_true", help="Show version information")
     parser.add_argument("-m", "--model", help="Name of the Ollama model to use")
     parser.add_argument("-t", "--template", 
                         choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
@@ -435,6 +436,12 @@ def main():
     
     # Configure logging based on debug flag
     configure_logging(debug=args.debug, log_file=args.log_file)
+    
+    # Handle version flag
+    if args.version:
+        from getllm import __version__
+        print(f"getLLM version {__version__}")
+        return 0
     
     # Handle Hugging Face model search
     if args.search or args.update_hf:
