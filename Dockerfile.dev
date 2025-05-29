@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-slim as builder
 
 WORKDIR /app
 
@@ -13,11 +13,14 @@ ENV VIRTUAL_ENV=/opt/venv
 RUN python -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Install Python dependencies
-COPY requirements-dev.txt ./
-RUN pip install --no-cache-dir -r requirements-dev.txt
+# Copy requirements files first for better caching
+COPY requirements.txt requirements-dev.txt ./
 
-# Copy the package files
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-dev.txt
+
+# Copy the rest of the application
 COPY . .
 
 # Install the package in development mode

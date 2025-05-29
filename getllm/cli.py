@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Import from getllm modules
 from getllm import models
-from getllm.ollama import OllamaServer, get_ollama_server
+from getllm.ollama_integration import OllamaIntegration, get_ollama_integration as get_ollama_server
 
 # Create .getllm directory if it doesn't exist
 PACKAGE_DIR = os.path.join(os.path.expanduser('~'), '.getllm')
@@ -591,9 +591,14 @@ def main():
                 print("Alternatively, use --mock for testing without Ollama.")
                 return 1
         
-        # Create OllamaServer or MockOllamaServer
+        # Create OllamaIntegration or MockOllamaServer
         if not mock_mode:
             runner = get_ollama_server(model=model)
+            if not runner.check_server_running():
+                print("Starting Ollama server...")
+                if not runner.start_ollama():
+                    print("Failed to start Ollama server. Please make sure Ollama is installed and running.")
+                    return 1
         else:
             runner = MockOllamaServer(model=model)
         
