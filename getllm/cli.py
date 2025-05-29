@@ -542,7 +542,7 @@ def main():
         elif args.command == "default":
             print("Default model:", models.get_default_model())
         elif args.command == "update":
-            models.update_models_from_ollama()
+            models.update_models_from_ollama(mock=args.mock)
         elif args.command == "test":
             default = models.get_default_model()
             print(f"Test default model: {default}")

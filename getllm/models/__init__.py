@@ -128,14 +128,23 @@ def update_huggingface_models_cache(limit: int = 50) -> bool:
         print(f"Error updating Hugging Face models cache: {e}")
         return False
 
-def update_models_from_ollama() -> bool:
+def update_models_from_ollama(mock: bool = False) -> bool:
     """
     Update the list of available Ollama models.
     
+    Args:
+        mock: If True, skip Ollama server checks and return mock data
+        
     Returns:
         True if successful, False otherwise.
     """
     logger.debug('Updating Ollama models...')
+    
+    if mock:
+        logger.debug('Running in mock mode - skipping Ollama server checks')
+        print("Running in mock mode - Ollama server checks bypassed")
+        return True
+        
     try:
         ollama_models = ollama_manager.get_available_models()
         logger.debug(f'Found {len(ollama_models)} Ollama models')
@@ -152,6 +161,7 @@ def update_models_from_ollama() -> bool:
     except Exception as e:
         logger.error(f"Error updating Ollama models: {e}", exc_info=True)
         print(f"Error updating Ollama models: {e}")
+        return False
         return False
 
 def update_models_metadata() -> bool:
