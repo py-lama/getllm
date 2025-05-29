@@ -11,12 +11,22 @@ __version__ = "0.1.0"
 
 # Import from the getllm subpackage
 from getllm.getllm.models import (
+    ModelManager,
+    HuggingFaceModelManager,
+    OllamaModelManager,
     get_models, 
     get_default_model, 
     set_default_model, 
     install_model,
     list_installed_models,
-    update_models_from_ollama
+    update_models_from_ollama,
+    update_models_metadata,
+    search_huggingface_models,
+    interactive_model_search,
+    update_models_from_huggingface,
+    update_huggingface_models_cache,
+    load_huggingface_models_from_cache,
+    load_ollama_models_from_cache
 )
 from getllm.getllm.ollama import (
     OllamaServer as OllamaIntegration,
@@ -48,6 +58,11 @@ except ImportError:
     CLI_AVAILABLE = False
 
 __all__ = [
+    # Model management classes
+    'ModelManager',
+    'HuggingFaceModelManager',
+    'OllamaModelManager',
+    
     # Model management functions
     'get_models',
     'get_default_model',
@@ -55,6 +70,13 @@ __all__ = [
     'install_model',
     'list_installed_models',
     'update_models_from_ollama',
+    'update_models_metadata',
+    'update_models_from_huggingface',
+    'update_huggingface_models_cache',
+    'search_huggingface_models',
+    'interactive_model_search',
+    'load_huggingface_models_from_cache',
+    'load_ollama_models_from_cache',
     
     # Ollama integration
     'OllamaIntegration',
