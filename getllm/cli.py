@@ -18,6 +18,7 @@ os.makedirs(PACKAGE_DIR, exist_ok=True)
 
 # Configure logging
 import logging
+import logging.handlers
 import datetime
 
 # Create logger
@@ -45,24 +46,49 @@ def configure_logging(debug=False, log_file=None):
     for handler in logger.handlers[::]:
         logger.removeHandler(handler)
     
-    # Create file handler
-    file_handler = logging.FileHandler(log_file)
+    # Create file handler with rotation to keep log files manageable
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    file_handler = logging.handlers.RotatingFileHandler(
+        log_file, 
+        maxBytes=10*1024*1024,  # 10MB
+        backupCount=5
+    )
     file_handler.setLevel(log_level)
     
     # Create console handler
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level if debug else logging.WARNING)
     
-    # Create formatter
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+    # Create detailed formatter
+    detailed_formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s'
+    )
+    file_handler.setFormatter(detailed_formatter)
+    
+    # Create simpler formatter for console
+    console_formatter = logging.Formatter('%(levelname)s - %(message)s')
+    console_handler.setFormatter(console_formatter)
     
     # Add handlers to logger
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
     
+    # Configure root logger to catch all logs
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    
+    # Remove any existing handlers from root logger
+    for handler in root_logger.handlers[::]:
+        root_logger.removeHandler(handler)
+    
+    # Add a file handler to the root logger
+    root_logger.addHandler(file_handler)
+    
     logger.debug(f'Logging configured. Debug mode: {debug}, Log file: {log_file}')
+    if debug:
+        logger.debug('Debug logging is enabled - detailed logs will be shown and saved to file')
+    else:
+        logger.info('Normal logging mode - only warnings and errors will be shown in console')
 
 # Template functions for code generation
 def get_template(prompt, template_type, **kwargs):
@@ -317,6 +343,9 @@ def main():
     prompt = None
     args_to_parse = sys.argv[1:]
     
+    # Pre-parse for debug flag to set up logging early
+    debug_mode = "--debug" in args_to_parse
+    
     # Check if the first argument is a command or looks like a prompt
     commands = ["code", "list", "install", "installed", "set-default", "default", "update", "test", "interactive"]
     
@@ -403,6 +432,9 @@ def main():
         args = parser.parse_args()
         if args.command == "code":
             prompt = " ".join(args.prompt)
+    
+    # Configure logging based on debug flag
+    configure_logging(debug=args.debug, log_file=args.log_file)
     
     # Handle Hugging Face model search
     if args.search or args.update_hf:

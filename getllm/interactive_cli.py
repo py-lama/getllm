@@ -1,9 +1,14 @@
 from getllm import models
 from getllm.models import update_huggingface_models_cache
 import logging
+import os
+import datetime
 
 # Get logger
 logger = logging.getLogger('getllm.interactive_cli')
+
+# Ensure we capture all interactive CLI operations in logs
+logger.debug('Interactive CLI module loaded')
 import questionary
 import sys
 
@@ -284,9 +289,13 @@ def generate_code_interactive(mock_mode=False):
             print(result["output"])
 
 def interactive_shell(mock_mode=False):
+    logger.info('Starting interactive shell session')
+    logger.debug(f'Interactive shell mode: {"mock" if mock_mode else "normal"}')
+    
     print(INTRO)
     if mock_mode:
         print("Running in mock mode (no Ollama required)")
+        logger.debug('Mock mode enabled - Ollama checks will be bypassed')
     
     while True:
         answer = questionary.select(
@@ -399,8 +408,16 @@ def interactive_shell(mock_mode=False):
             ollama_manager = OllamaModelManager()
             
             # Search for models in both Ollama and Hugging Face
+            logger.debug(f'Searching for Ollama models matching query: {query}')
             ollama_models = ollama_manager.search_models(query=query, limit=20)
-            hf_models = search_huggingface_models(query=query, limit=20) if not ollama_models else []
+            logger.debug(f'Found {len(ollama_models)} Ollama models matching query')
+            
+            if not ollama_models:
+                logger.debug(f'No Ollama models found, searching Hugging Face for query: {query}')
+                hf_models = search_huggingface_models(query=query, limit=20)
+                logger.debug(f'Found {len(hf_models)} Hugging Face models matching query')
+            else:
+                hf_models = []
             
             if not ollama_models and not hf_models:
                 print(f"No models found matching '{query}' in either Ollama library or Hugging Face.")
