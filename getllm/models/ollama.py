@@ -31,8 +31,12 @@ class OllamaModelManager(BaseModelManager):
         self.cache_file = self.logs_dir / "ollama_models.json"
         self.models_metadata_file = get_models_metadata_path()
         
-        # Ensure the logs directory exists
+        # Set up models directory
+        self.models_dir = Path.home() / ".ollama" / "models"
+        
+        # Ensure the directories exist
         self.logs_dir.mkdir(parents=True, exist_ok=True)
+        self.models_dir.mkdir(parents=True, exist_ok=True)
     
     def get_available_models(self, limit: Optional[int] = None, force_refresh: bool = False) -> List[Dict]:
         """

@@ -28,6 +28,10 @@ class OllamaModelManager:
         self.models_api_url = f"{base_api_url}/tags"
         self.pull_api_url = f"{base_api_url}/pull"
         
+        # Set up models directory
+        self.models_dir = os.path.join(os.path.expanduser('~'), '.ollama', 'models')
+        os.makedirs(self.models_dir, exist_ok=True)
+        
     def list_installed_models(self) -> List[Dict[str, Any]]:
         """List all installed Ollama models.
         

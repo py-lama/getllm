@@ -49,6 +49,10 @@ class OllamaModelManager(BaseModelManager):
             os.path.expanduser("~"), ".cache", "getllm", "ollama"
         )
         self.base_url = base_url or OLLAMA_API_BASE
+        
+        # Set up models directory
+        self.models_dir = os.path.join(os.path.expanduser('~'), '.ollama', 'models')
+        os.makedirs(self.models_dir, exist_ok=True)
         self.ollama_path = ollama_path or os.getenv("OLLAMA_PATH", "ollama")
         self._models_cache: Dict[str, Dict[str, Any]] = {}
         self._is_installed = self._check_ollama_installed()
