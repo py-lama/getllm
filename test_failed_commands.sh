@@ -50,10 +50,10 @@ declare -A failed_tests=(
     [13]="python -m getllm --debug --mock update"
     [15]="python -m getllm --mock code 'print hello world'"
     [16]="python -m getllm --mock code 'create a fibonacci function'"
-    [17]="python -m getllm --mock -t basic code 'sort a list of numbers'"
-    [18]="python -m getllm --mock -t dependency_aware -d 'requests,beautifulsoup4' code 'web scraper for news'"
+    [17]="python -m getllm --mock code 'sort a list of numbers' -t basic"
+    [18]="python -m getllm --mock code 'web scraper for news' -t dependency_aware -d 'requests,beautifulsoup4'"
     [19]="python -m getllm --debug --mock code 'simple calculator'"
-    [20]="python -m getllm --mock -t platform_aware code 'file reader utility'"
+    [20]="python -m getllm --mock code 'file reader utility' -t platform_aware"
 )
 
 # Run only the failed tests

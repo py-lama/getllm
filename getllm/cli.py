@@ -405,16 +405,9 @@ def main():
     global_group.add_argument("--log-file", help="Specify custom log file path")
     global_group.add_argument("--version", action="store_true", help="Show version information")
     
-    # Command-specific options
+    # Common options
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
     parser.add_argument("-m", "--model", help="Name of the Ollama model to use")
-    parser.add_argument("-t", "--template", 
-                       choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
-                       default="platform_aware",
-                       help="Type of template to use")
-    parser.add_argument("-d", "--dependencies", help="List of allowed dependencies (only for template=dependency_aware)")
-    parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
-    parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
     parser.add_argument("--search", metavar="QUERY", help="Search for models on Hugging Face matching the query")
     parser.add_argument("-S", "--find-model", dest="search", metavar="QUERY", help="Alias for --search")
     parser.add_argument("--update-hf", action="store_true", help="Update models list from Hugging Face")
@@ -425,7 +418,13 @@ def main():
     # Code generation command
     code_parser = subparsers.add_parser("code", help="Generate Python code using LLM models")
     code_parser.add_argument("prompt", nargs="+", help="Task to be performed by Python code")
-    code_parser.add_argument("--mock", action="store_true", help="Run in mock mode (no Ollama required)")
+    code_parser.add_argument("-t", "--template", 
+                          choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
+                          default="platform_aware",
+                          help="Type of template to use")
+    code_parser.add_argument("-d", "--dependencies", help="List of allowed dependencies (only for template=dependency_aware)")
+    code_parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
+    code_parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
     
     # Model management commands
     subparsers.add_parser("list", help="List available models (from models.json)")
