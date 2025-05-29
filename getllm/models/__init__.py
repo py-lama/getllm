@@ -4,9 +4,13 @@ This package contains model-related functionality for the getllm application.
 
 import os
 import json
+import logging
 import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
+
+# Get logger
+logger = logging.getLogger('getllm.models')
 
 from .base import ModelManager
 from .huggingface import HuggingFaceModelManager
@@ -77,14 +81,14 @@ def get_models() -> List[Dict[str, Any]]:
         hf_models = huggingface_manager.get_available_models()
         models.extend([{"source": "huggingface", **model} for model in hf_models])
     except Exception as e:
-        print(f"Error getting Hugging Face models: {e}")
+        logger.error(f"Error getting Hugging Face models: {e}")
     
     # Get models from Ollama
     try:
         ollama_models = ollama_manager.get_available_models()
         models.extend([{"source": "ollama", **model} for model in ollama_models])
     except Exception as e:
-        print(f"Error getting Ollama models: {e}")
+        logger.error(f"Error getting Ollama models: {e}")
     
     return models
 
@@ -107,6 +111,7 @@ def update_huggingface_models_cache(limit: int = 50) -> bool:
     Returns:
         True if successful, False otherwise.
     """
+    logger.debug('Updating Hugging Face models cache...')
     try:
         models = huggingface_manager.get_available_models(limit=limit)
         cache_path = get_hf_models_cache_path()
@@ -115,8 +120,10 @@ def update_huggingface_models_cache(limit: int = 50) -> bool:
         with open(cache_path, 'w') as f:
             json.dump(models, f, indent=2)
         
+        logger.info('Successfully updated Hugging Face models cache')
         return True
     except Exception as e:
+        logger.error(f"Error updating Hugging Face models cache: {e}", exc_info=True)
         print(f"Error updating Hugging Face models cache: {e}")
         return False
 
@@ -127,16 +134,22 @@ def update_models_from_ollama() -> bool:
     Returns:
         True if successful, False otherwise.
     """
+    logger.debug('Updating Ollama models...')
     try:
         ollama_models = ollama_manager.get_available_models()
+        logger.debug(f'Found {len(ollama_models)} Ollama models')
+        
         # Update metadata
         for model in ollama_models:
+            logger.debug(f'Updating metadata for Ollama model: {model.get("name", "unknown")}')
             metadata_manager.update_metadata(
                 model['name'],
                 {"source": "ollama", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
+        logger.info('Successfully updated Ollama models')
         return True
     except Exception as e:
+        logger.error(f"Error updating Ollama models: {e}", exc_info=True)
         print(f"Error updating Ollama models: {e}")
         return False
 
@@ -147,20 +160,29 @@ def update_models_metadata() -> bool:
     Returns:
         True if successful, False otherwise.
     """
+    logger.debug('Updating metadata for all models...')
     try:
         # Update Hugging Face models metadata
+        logger.debug('Fetching Hugging Face models...')
         hf_models = huggingface_manager.get_available_models()
+        logger.debug(f'Found {len(hf_models)} Hugging Face models')
+        
         for model in hf_models:
+            model_name = model.get('name', model.get('id', 'unknown'))
+            logger.debug(f'Updating metadata for Hugging Face model: {model_name}')
             metadata_manager.update_metadata(
                 model['name'],
                 {"source": "huggingface", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
         
         # Update Ollama models metadata
+        logger.debug('Updating Ollama models metadata...')
         update_models_from_ollama()
         
+        logger.info('Successfully updated metadata for all models')
         return True
     except Exception as e:
+        logger.error(f"Error updating models metadata: {e}", exc_info=True)
         print(f"Error updating models metadata: {e}")
         return False
 
@@ -196,6 +218,7 @@ def search_huggingface_models(query: str = None, limit: int = 20) -> List[Dict[s
                 
         return models_list
     except Exception as e:
+        logger.error(f"Error searching Hugging Face models: {e}", exc_info=True)
         print(f"Error searching Hugging Face models: {e}")
         # Fall back to DEFAULT_HF_MODELS
         if query:
@@ -223,6 +246,7 @@ def load_huggingface_models_from_cache() -> List[Dict]:
         with open(cache_path, 'r') as f:
             return json.load(f)
     except Exception as e:
+        logger.error(f"Error loading Hugging Face models from cache: {e}", exc_info=True)
         print(f"Error loading Hugging Face models from cache: {e}")
         return []
 
@@ -241,6 +265,7 @@ def load_ollama_models_from_cache() -> List[Dict]:
         with open(cache_path, 'r') as f:
             return json.load(f)
     except Exception as e:
+        logger.error(f"Error loading Ollama models from cache: {e}", exc_info=True)
         print(f"Error loading Ollama models from cache: {e}")
         return []
 
@@ -262,31 +287,47 @@ def get_huggingface_models(limit: int = 20) -> List[Dict[str, Any]]:
         # Fall back to DEFAULT_HF_MODELS if no models found
         return DEFAULT_HF_MODELS[:limit]
     except Exception as e:
+        logger.error(f"Error getting Hugging Face models: {e}", exc_info=True)
         print(f"Error getting Hugging Face models: {e}")
         # Fall back to DEFAULT_HF_MODELS in case of error
         return DEFAULT_HF_MODELS[:limit]
 
 def update_models_from_huggingface(query: str = None, limit: int = 20) -> bool:
     """
-    Update models from Hugging Face based on a query string.
+    Update models from Hugging Face.
     
     Args:
         query: Optional search query to filter models
-        limit: Maximum number of models to update
+        limit: Maximum number of models to return
         
     Returns:
-        True if successful, False otherwise
+        True if successful, False otherwise.
     """
+    logger.debug(f'Updating models from Hugging Face with query: {query}, limit: {limit}')
     try:
+        # First update the cache
+        logger.debug('Updating Hugging Face models cache...')
+        cache_updated = update_huggingface_models_cache()
+        logger.debug(f'Cache update result: {cache_updated}')
+        
+        # Then update the models list
+        logger.debug('Searching for Hugging Face models...')
         models = search_huggingface_models(query=query, limit=limit)
+        logger.debug(f'Found {len(models)} Hugging Face models matching query')
+        
         # Update metadata for each model
         for model in models:
+            model_name = model.get('name', model.get('id', 'unknown'))
+            logger.debug(f'Updating metadata for Hugging Face model: {model_name}')
             metadata_manager.update_metadata(
                 model.get('name', model.get('id', '')),
                 {"source": "huggingface", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
+        
+        logger.info(f'Successfully updated {len(models)} models from Hugging Face')
         return True
     except Exception as e:
+        logger.error(f"Error updating models from Hugging Face: {e}", exc_info=True)
         print(f"Error updating models from Hugging Face: {e}")
         return False
 

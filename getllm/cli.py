@@ -18,7 +18,51 @@ os.makedirs(PACKAGE_DIR, exist_ok=True)
 
 # Configure logging
 import logging
-logger = logging.getLogger('getllm.cli')
+import datetime
+
+# Create logger
+logger = logging.getLogger('getllm')
+logger.setLevel(logging.INFO)
+
+# Create log directory if it doesn't exist
+LOG_DIR = os.path.join(PACKAGE_DIR, 'logs')
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Log file with timestamp
+DEFAULT_LOG_FILE = os.path.join(LOG_DIR, f'getllm_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.log')
+
+# Function to configure logging based on debug flag
+def configure_logging(debug=False, log_file=None):
+    """Configure logging based on debug flag and log file path."""
+    if log_file is None:
+        log_file = DEFAULT_LOG_FILE
+        
+    # Set log level based on debug flag
+    log_level = logging.DEBUG if debug else logging.INFO
+    logger.setLevel(log_level)
+    
+    # Clear existing handlers
+    for handler in logger.handlers[::]:
+        logger.removeHandler(handler)
+    
+    # Create file handler
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setLevel(log_level)
+    
+    # Create console handler
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(log_level if debug else logging.WARNING)
+    
+    # Create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+    console_handler.setFormatter(formatter)
+    
+    # Add handlers to logger
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+    
+    logger.debug(f'Logging configured. Debug mode: {debug}, Log file: {log_file}')
 
 # Template functions for code generation
 def get_template(prompt, template_type, **kwargs):
@@ -313,6 +357,8 @@ def main():
     # Global options
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
     parser.add_argument("--mock", action="store_true", help="Use mock mode (no Ollama required)")
+    parser.add_argument("--debug", action="store_true", help="Enable debug mode with verbose logging")
+    parser.add_argument("--log-file", help="Specify custom log file path")
     parser.add_argument("-m", "--model", help="Name of the Ollama model to use")
     parser.add_argument("-t", "--template", 
                         choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
@@ -397,7 +443,16 @@ def main():
         else:  # args.update_hf
             # Update models from Hugging Face
             print("Updating models from Hugging Face...")
-            update_models_from_huggingface()
+            logger.info("Starting update of models from Hugging Face")
+            success = update_models_from_huggingface()
+            if success:
+                logger.info("Successfully updated models from Hugging Face")
+                print("Successfully updated models from Hugging Face.")
+            else:
+                logger.error("Failed to update models from Hugging Face")
+                print("Error updating models from Hugging Face. Check logs for details.")
+                if args.debug:
+                    print(f"Debug logs are available at: {args.log_file or DEFAULT_LOG_FILE}")
         
         return 0
         

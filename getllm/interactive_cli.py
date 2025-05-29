@@ -1,5 +1,9 @@
 from getllm import models
-from getllm.models import update_huggingface_models_cache, update_models_from_huggingface
+from getllm.models import update_huggingface_models_cache
+import logging
+
+# Get logger
+logger = logging.getLogger('getllm.interactive_cli')
 import questionary
 import sys
 
@@ -434,10 +438,26 @@ def interactive_shell(mock_mode=False):
         elif args[0] == "update-hf":
             # Update models from Hugging Face
             print("Updating models from Hugging Face...")
-            # First update the cache
-            update_huggingface_models_cache()
-            # Then update the models list
-            update_models_from_huggingface()
+            try:
+                logger.debug('Starting update of Hugging Face models')
+                # First update the cache
+                cache_updated = update_huggingface_models_cache()
+                logger.debug(f'Cache update result: {cache_updated}')
+                
+                # Then update the models list using the function from models.py
+                from getllm.models import update_models_metadata
+                success = update_models_metadata()
+                
+                if success:
+                    logger.info('Successfully updated models from Hugging Face')
+                    print("Successfully updated models from Hugging Face.")
+                else:
+                    logger.error('Failed to update models from Hugging Face')
+                    print("Error updating models from Hugging Face. Check logs for details.")
+            except Exception as e:
+                logger.error(f'Error during Hugging Face models update: {e}', exc_info=True)
+                print(f"Error updating models from Hugging Face: {e}")
+                print("Check logs for more details or run with --debug flag for verbose output.")
         elif args[0] == "generate":
             generate_code_interactive(mock_mode=mock_mode)
         else:
