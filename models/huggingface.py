@@ -7,25 +7,64 @@ import re
 import json
 import logging
 import requests
-from typing import List, Dict, Optional, Tuple, Union
+import sys
+from typing import List, Dict, Optional, Tuple, Union, Any
 from pathlib import Path
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
-from .constants import (
-    get_models_dir,
-    get_hf_models_cache_path,
-    get_ollama_models_cache_path,
-    get_models_metadata_path,
-    DEFAULT_HF_MODELS
-)
-
-# Configure logging
+# Set up logger first
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
+# Add the project root to the Python path if needed
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
+# Import local modules
+try:
+    from .constants import (
+        get_models_dir,
+        get_hf_models_cache_path,
+        get_ollama_models_cache_path,
+        get_models_metadata_path,
+        DEFAULT_HF_MODELS
+    )
+    
+    # Define these functions in this module since they're specific to Hugging Face
+    def load_huggingface_models_from_cache() -> List[Dict]:
+        """Load models from the Hugging Face cache file."""
+        try:
+            cache_path = get_hf_models_cache_path()
+            if not cache_path or not os.path.exists(cache_path):
+                logger.debug("No Hugging Face cache file found")
+                return []
+                
+            with open(cache_path, 'r', encoding='utf-8') as f:
+                models = json.load(f)
+                if not isinstance(models, list):
+                    logger.warning("Invalid cache format: expected a list of models")
+                    return []
+                return models
+                
+        except Exception as e:
+            logger.warning(f"Error loading Hugging Face models from cache: {e}")
+            return []
+            
+except ImportError as e:
+    logger.error(f"Error importing dependencies: {e}")
+    # Provide fallbacks for critical functions
+    def get_hf_models_cache_path():
+        return os.path.join(os.path.expanduser('~'), '.getllm', 'hf_models.json')
+    
+    def load_huggingface_models_from_cache() -> List[Dict]:
+        return []
+    
+    def update_huggingface_models_cache(*args, **kwargs):
+        return False, "Failed to initialize Hugging Face integration"
 
 # Headers to avoid 403 Forbidden errors
 HEADERS = {
@@ -34,50 +73,126 @@ HEADERS = {
 
 def search_huggingface_models(query: str = None, limit: int = 20) -> List[Dict]:
     """
-    Search for models on Hugging Face that match the given query.
+    Search for models on Hugging Face that match the query.
     
     Args:
-        query: The search query (e.g., "bielik"). If None, returns all models.
-        limit: Maximum number of results to return.
+        query: Search query string (case insensitive)
+        limit: Maximum number of results to return (default: 20, max: 100)
         
     Returns:
-        A list of dictionaries containing model information.
+        List of model dictionaries matching the query, with additional metadata
     """
     try:
-        # First try to update from web to get fresh results
-        success, _ = update_huggingface_models_cache(limit=50)
+        # Validate inputs
+        if not isinstance(limit, int) or limit <= 0:
+            limit = 20
+        limit = min(limit, 100)  # Cap at 100 results
         
-        # If web update failed, try to load from cache
-        if not success:
-            models = load_huggingface_models_from_cache()
-            # If no cached models, use the default ones
-            if not models:
-                models = DEFAULT_HF_MODELS
-        else:
-            # Reload models after update
-            models = load_huggingface_models_from_cache()
+        # Normalize query
+        query = query.lower().strip() if query else None
         
-        # Filter by query if provided
+        # Try to load from cache first
+        models = []
+        try:
+            models = load_huggingface_models_from_cache()
+            logger.debug(f"Loaded {len(models)} models from cache")
+        except Exception as e:
+            logger.warning(f"Error loading models from cache: {e}")
+        
+        # If no models in cache, try to update the cache
+        if not models:
+            logger.info("No models in cache, updating...")
+            success, msg = update_huggingface_models_cache()
+            if success:
+                models = load_huggingface_models_from_cache()
+                logger.info(f"Cache updated with {len(models)} models")
+        
+        # If still no models, use default models as fallback
+        if not models and DEFAULT_HF_MODELS:
+            logger.warning("Using default Hugging Face models as fallback")
+            models = DEFAULT_HF_MODELS
+        
+        # Filter models based on query if provided
         if query:
-            query = query.lower()
             filtered_models = []
+            query_parts = query.split()
+            
             for model in models:
-                if (query in model.get('id', '').lower() or 
-                    query in model.get('name', '').lower() or 
-                    query in model.get('description', '').lower() or
-                    any(query in str(tag).lower() for tag in model.get('tags', []))):
+                if not isinstance(model, dict):
+                    continue
+                    
+                # Extract searchable fields
+                search_fields = [
+                    model.get('name', '').lower(),
+                    model.get('id', '').lower(),
+                    model.get('author', '').lower(),
+                    model.get('description', '').lower(),
+                    ' '.join(str(tag).lower() for tag in model.get('tags', []) if tag)
+                ]
+                
+                # Check if all query parts match any field
+                if all(any(part in field for field in search_fields) 
+                       for part in query_parts):
                     filtered_models.append(model)
-            models = filtered_models
+                    if len(filtered_models) >= limit * 2:  # Get more than needed for better ranking
+                        break
+            
+            # Simple ranking: prioritize exact matches in name/id, then author, then tags/description
+            def rank_model(model):
+                score = 0
+                name = model.get('name', '').lower()
+                model_id = model.get('id', '').lower()
+                
+                if query == name or query == model_id:
+                    score += 100
+                if query in name or query in model_id:
+                    score += 50
+                if any(query == tag.lower() for tag in model.get('tags', [])):
+                    score += 30
+                if query in model.get('author', '').lower():
+                    score += 20
+                if query in model.get('description', '').lower():
+                    score += 10
+                return -score  # Negative for descending sort
+            
+            filtered_models.sort(key=rank_model)
+            models = filtered_models[:limit]
+        
+        # Add/update metadata for each model
+        for model in models:
+            if not isinstance(model, dict):
+                continue
+                
+            # Ensure required fields
+            if 'id' not in model:
+                continue
+            if 'name' not in model:
+                model['name'] = model['id'].split('/')[-1]
+                
+            # Add size information
+            model['size'] = extract_model_size(model)
+            
+            # Add source
+            model['source'] = 'huggingface'
+            
+            # Add model card URL
+            if 'huggingface.co/' not in model['id']:
+                model['url'] = f"https://huggingface.co/{model['id']}"
+            
+            # Add download count if missing
+            if 'downloads' not in model:
+                model['downloads'] = 0
+                
+            # Ensure tags is a list
+            if 'tags' not in model or not isinstance(model['tags'], list):
+                model['tags'] = []
         
         return models[:limit]
         
     except Exception as e:
-        logger.warning(f"Error searching Hugging Face models: {e}")
-        # Fall back to default models if there's an error
-        return [m for m in DEFAULT_HF_MODELS 
-               if not query or 
-               query.lower() in m.get('name', '').lower() or 
-               query.lower() in m.get('description', '').lower()]
+        logger.error(f"Error searching Hugging Face models: {e}", exc_info=True)
+        # Return default models on error if we have them
+        return DEFAULT_HF_MODELS[:limit] if DEFAULT_HF_MODELS else []
 
 def update_huggingface_models_cache(limit: int = 50) -> Tuple[bool, str]:
     """

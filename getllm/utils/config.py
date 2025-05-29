@@ -96,9 +96,12 @@ def get_models_metadata_path() -> Path:
     Get the path to the models metadata file.
     
     Returns:
-        Path to the models metadata JSON file.
+        Path to the models metadata JSON file in the ~/.getllm/logs/ directory.
     """
-    return get_models_dir() / "models_metadata.json"
+    # Create the logs directory if it doesn't exist
+    log_dir = Path.home() / ".getllm" / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return log_dir / "models_metadata.json"
 
 
 def get_default_model() -> Optional[str]:

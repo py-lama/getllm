@@ -28,9 +28,13 @@ class HuggingFaceModelManager(BaseModelManager):
     ]
     
     def __init__(self):
-        self.models_dir = get_models_dir()
-        self.cache_file = self.models_dir / "huggingface_models.json"
+        # Use the logs directory in the user's home directory for cache
+        self.logs_dir = Path.home() / ".getllm" / "logs"
+        self.cache_file = self.logs_dir / "huggingface_models.json"
         self.models_metadata_file = get_models_metadata_path()
+        
+        # Ensure the logs directory exists
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
     
     def get_available_models(self, limit: Optional[int] = None) -> List[Dict]:
         """

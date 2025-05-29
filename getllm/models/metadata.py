@@ -18,11 +18,12 @@ class ModelMetadataManager:
     """Manages model metadata operations."""
     
     def __init__(self):
-        self.metadata_file = get_models_metadata_path()
-        self.models_dir = get_models_dir()
+        # Use the logs directory in the user's home directory for metadata
+        self.logs_dir = Path.home() / ".getllm" / "logs"
+        self.metadata_file = self.logs_dir / "models_metadata.json"
         
-        # Ensure the models directory exists
-        self.models_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure the logs directory exists
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
     
     def get_metadata(self, model_name: str) -> Optional[Dict[str, Any]]:
         """Get metadata for a specific model.

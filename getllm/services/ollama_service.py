@@ -5,6 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 from typing import List, Dict, Optional, Any
+import requests
 
 from ..utils.config import get_models_dir
 
@@ -13,11 +14,12 @@ class OllamaService:
     """Service for interacting with Ollama models."""
     
     def __init__(self):
-        self.models_dir = get_models_dir()
-        self.cache_file = self.models_dir / "ollama_models.json"
+        # Use the logs directory in the user's home directory for cache
+        self.logs_dir = Path.home() / ".getllm" / "logs"
+        self.cache_file = self.logs_dir / "ollama_models.json"
         
-        # Ensure the models directory exists
-        self.models_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure the logs directory exists
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
     
     def list_models(self) -> List[Dict]:
         """List all available Ollama models.
@@ -95,19 +97,33 @@ class OllamaService:
             List of installed model names.
         """
         try:
-            result = subprocess.run(
-                ["ollama", "list", "--json"],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode == 0:
-                models = json.loads(result.stdout)
-                return [model.get('name') for model in models if 'name' in model]
+            # Try using the API first
+            try:
+                response = requests.get("http://localhost:11434/api/tags")
+                if response.status_code == 200:
+                    data = response.json()
+                    return [model.get('name', '') for model in data.get('models', [])]
+            except requests.exceptions.RequestException:
+                pass
+                
+            # Fallback to CLI if API fails
+            try:
+                result = subprocess.run(
+                    ["ollama", "list", "--json"],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    models = json.loads(result.stdout)
+                    return [model.get('name') for model in models if 'name' in model]
+            except (subprocess.SubprocessError, json.JSONDecodeError):
+                pass
                 
             return []
             
-        except (subprocess.SubprocessError, json.JSONDecodeError):
+        except Exception as e:
+            print(f"Error listing installed models: {str(e)}")
             return []
     
     def update_models_cache(self) -> bool:
@@ -128,44 +144,84 @@ class OllamaService:
             List of model dictionaries.
         """
         try:
-            # First, get the list of installed models
-            installed_models = {}
-            result = subprocess.run(
-                ["ollama", "list", "--json"],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode == 0:
-                installed = json.loads(result.stdout)
-                for model in installed:
-                    if 'name' in model:
-                        installed_models[model['name']] = model
-            
-            # Get all available models from the library
-            result = subprocess.run(
-                ["ollama", "list", "--all", "--json"],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode != 0:
-                return []
+            # First, check if Ollama is running
+            try:
+                response = requests.get("http://localhost:11434/api/tags")
+                if response.status_code == 200:
+                    data = response.json()
+                    models = data.get('models', [])
+                    
+                    # Get list of installed models
+                    installed_models = {}
+                    try:
+                        result = subprocess.run(
+                            ["ollama", "list", "--json"],
+                            capture_output=True,
+                            text=True
+                        )
+                        if result.returncode == 0:
+                            installed = json.loads(result.stdout)
+                            installed_models = {m['name']: m for m in installed if 'name' in m}
+                    except (subprocess.SubprocessError, json.JSONDecodeError):
+                        pass
+                    
+                    # Enrich with installation status
+                    for model in models:
+                        model_name = model.get('name', '')
+                        model['installed'] = model_name in installed_models
+                        if model['installed'] and model_name in installed_models:
+                            model.update(installed_models[model_name])
+                    
+                    return models
+            except requests.exceptions.RequestException:
+                pass
                 
-            models = json.loads(result.stdout)
+            # Fallback to using the Ollama CLI if API is not available
+            try:
+                # Get list of installed models
+                installed_models = {}
+                result = subprocess.run(
+                    ["ollama", "list", "--json"],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    installed = json.loads(result.stdout)
+                    for model in installed:
+                        if 'name' in model:
+                            installed_models[model['name']] = model
+                
+                # Get all available models from the library
+                result = subprocess.run(
+                    ["ollama", "list", "--all", "--json"],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode != 0:
+                    return []
+                    
+                models = json.loads(result.stdout)
+                
+                # Mark which models are installed
+                for model in models:
+                    if 'name' in model and model['name'] in installed_models:
+                        model['installed'] = True
+                        # Merge with installed model data
+                        model.update(installed_models[model['name']])
+                    else:
+                        model['installed'] = False
+                
+                return models
+                
+            except (subprocess.SubprocessError, json.JSONDecodeError):
+                pass
+                
+            return []
             
-            # Mark which models are installed
-            for model in models:
-                if 'name' in model and model['name'] in installed_models:
-                    model['installed'] = True
-                    # Merge with installed model data
-                    model.update(installed_models[model['name']])
-                else:
-                    model['installed'] = False
-            
-            return models
-            
-        except (subprocess.SubprocessError, json.JSONDecodeError):
+        except Exception as e:
+            print(f"Error fetching models from Ollama: {str(e)}")
             return []
     
     def _load_cached_models(self) -> List[Dict]:
