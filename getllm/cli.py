@@ -425,6 +425,7 @@ def main():
     # Code generation command
     code_parser = subparsers.add_parser("code", help="Generate Python code using LLM models")
     code_parser.add_argument("prompt", nargs="+", help="Task to be performed by Python code")
+    code_parser.add_argument("--mock", action="store_true", help="Run in mock mode (no Ollama required)")
     
     # Model management commands
     subparsers.add_parser("list", help="List available models (from models.json)")
