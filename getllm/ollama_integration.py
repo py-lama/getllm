@@ -681,15 +681,17 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
                     if model.startswith('bielik-custom-'):
                         logger.info(f"Found existing Bielik model installation: {model}")
                         print(f"\nFound existing Bielik model installation: {model}")
-                        print(f"Using existing model instead of downloading again.")
+                        print("Using existing model instead of downloading again.")
                         self.model = model
                         
                         # Increase timeout for Bielik models as they tend to be larger
                         current_timeout = int(os.getenv('OLLAMA_TIMEOUT', '30'))
                         if current_timeout < 120:
                             os.environ['OLLAMA_TIMEOUT'] = '120'
-                            print(f"Increased API timeout to 120 seconds for Bielik model.")
-                        
+                            print("Increased API timeout to 120 seconds for Bielik model.")
+                        return True
+            
+            # Try to install the requested model first
             print(f"\nModel '{self.model}' is not installed. Attempting to install it now...")
             if self.install_model(self.model):
                 print(f"Successfully installed model '{self.model}'")
@@ -699,7 +701,7 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
             if os.getenv('OLLAMA_STRICT_MODE', 'false').lower() != 'true':
                 # Try to find a similar model from available ones
                 for model in available_models:
-                    if 'code' in model.lower() or 'llama' in model.lower() or 'phi' in model.lower():
+                    if any(x in model.lower() for x in ['code', 'llama', 'phi', 'mistral']):
                         logger.info(f"Automatically selecting available model: {model} instead of {self.model}")
                         self.model = model
                         return True
@@ -710,29 +712,33 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
                     self.model = available_models[0]
                     return True
             
+            # Try fallback models if available
+            if hasattr(self, 'fallback_models'):
+                print(f"Failed to install model '{self.model}'. Trying fallback models...")
+                for fallback in self.fallback_models:
+                    if fallback != self.model and fallback not in available_models:
+                        print(f"Trying fallback model: {fallback}")
+                        if self.install_model(fallback):
+                            self.model = fallback
+                            print(f"Using fallback model: {fallback}")
+                            return True
+            
+            # If no fallbacks worked, try to use any available model
+            if available_models:
+                logger.info(f"Using available model: {available_models[0]}")
+                self.model = available_models[0]
+                return True
+                
             return False
+            
+        except Exception as e:
+            logger.error(f"Error checking model availability: {str(e)}")
+            return False
+
+    def _check_disk_space(self, required_space_gb=None, model_name=None):
+        """
+        Check if there is enough disk space available for model installation.
         
-        # For non-specified models, try to install the requested model first
-        print(f"\nModel '{self.model}' is not installed. Attempting to install it now...")
-        if self.install_model(self.model):
-            print(f"Successfully installed model '{self.model}'")
-            return True
-        
-        # If installation failed, try fallback models
-        print(f"Failed to install model '{self.model}'. Trying fallback models...")
-        for fallback in self.fallback_models:
-            if fallback != self.model:
-                print(f"Trying fallback model: {fallback}")
-                if self.install_model(fallback):
-                    self.model = fallback
-                    print(f"Using fallback model: {fallback}")
-                    return True
-        
-        # If no fallbacks worked, try to use any available model
-        if available_models:
-            logger.info(f"Using available model: {available_models[0]}")
-            self.model = available_models[0]
-            return True
         Args:
             required_space_gb: Required space in GB, if known
             model_name: Name of the model to check space for
@@ -806,7 +812,7 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
     
     def install_model(self, model_name: str) -> bool:
         """
-        Install a model using Ollama's pull command.
+        Install a model using Ollama\'s pull command.
         For SpeakLeash models, performs a special installation process.
         
         Args:
