@@ -1,0 +1,2107 @@
+{
+  "timestamp": "2025-05-29T16:17:12.382835",
+  "model_count": 172,
+  "models": [
+    {
+      "name": "gemma3",
+      "url": "https://ollama.com/library/gemma3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "1b",
+        "4b",
+        "12b",
+        "27b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.326047"
+    },
+    {
+      "name": "qwen3",
+      "url": "https://ollama.com/library/qwen3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "0.6b",
+        "1.7b",
+        "4b",
+        "8b",
+        "14b",
+        "30b",
+        "32b",
+        "235b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.326525"
+    },
+    {
+      "name": "devstral",
+      "url": "https://ollama.com/library/devstral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "24b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.326852"
+    },
+    {
+      "name": "deepseek-r1",
+      "url": "https://ollama.com/library/deepseek-r1",
+      "description": "No description",
+      "sizes": [
+        "about a minute ago"
+      ],
+      "tags": [
+        "1.5b",
+        "7b",
+        "8b",
+        "14b",
+        "32b",
+        "70b",
+        "671b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.327260"
+    },
+    {
+      "name": "llama4",
+      "url": "https://ollama.com/library/llama4",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "tools",
+        "16x17b",
+        "128x17b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.327623"
+    },
+    {
+      "name": "qwen2.5vl",
+      "url": "https://ollama.com/library/qwen2.5vl",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "3b",
+        "7b",
+        "32b",
+        "72b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.327996"
+    },
+    {
+      "name": "llama3.3",
+      "url": "https://ollama.com/library/llama3.3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.328324"
+    },
+    {
+      "name": "phi4",
+      "url": "https://ollama.com/library/phi4",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "14b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.328635"
+    },
+    {
+      "name": "llama3.2",
+      "url": "https://ollama.com/library/llama3.2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "1b",
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.328977"
+    },
+    {
+      "name": "llama3.1",
+      "url": "https://ollama.com/library/llama3.1",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "8b",
+        "70b",
+        "405b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.329339"
+    },
+    {
+      "name": "nomic-embed-text",
+      "url": "https://ollama.com/library/nomic-embed-text",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.329646"
+    },
+    {
+      "name": "mistral",
+      "url": "https://ollama.com/library/mistral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.329967"
+    },
+    {
+      "name": "qwen2.5",
+      "url": "https://ollama.com/library/qwen2.5",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "0.5b",
+        "1.5b",
+        "3b",
+        "7b",
+        "14b",
+        "32b",
+        "72b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.330395"
+    },
+    {
+      "name": "llama3",
+      "url": "https://ollama.com/library/llama3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.330717"
+    },
+    {
+      "name": "llava",
+      "url": "https://ollama.com/library/llava",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "7b",
+        "13b",
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.331072"
+    },
+    {
+      "name": "qwen2.5-coder",
+      "url": "https://ollama.com/library/qwen2.5-coder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "0.5b",
+        "1.5b",
+        "3b",
+        "7b",
+        "14b",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.331484"
+    },
+    {
+      "name": "gemma2",
+      "url": "https://ollama.com/library/gemma2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2b",
+        "9b",
+        "27b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.331825"
+    },
+    {
+      "name": "qwen",
+      "url": "https://ollama.com/library/qwen",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "0.5b",
+        "1.8b",
+        "4b",
+        "7b",
+        "14b",
+        "32b",
+        "72b",
+        "110b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.332247"
+    },
+    {
+      "name": "gemma",
+      "url": "https://ollama.com/library/gemma",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2b",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.332572"
+    },
+    {
+      "name": "qwen2",
+      "url": "https://ollama.com/library/qwen2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "0.5b",
+        "1.5b",
+        "7b",
+        "72b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.333041"
+    },
+    {
+      "name": "llama2",
+      "url": "https://ollama.com/library/llama2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.333396"
+    },
+    {
+      "name": "mxbai-embed-large",
+      "url": "https://ollama.com/library/mxbai-embed-large",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "335m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.333720"
+    },
+    {
+      "name": "phi3",
+      "url": "https://ollama.com/library/phi3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3.8b",
+        "14b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.334042"
+    },
+    {
+      "name": "llama3.2-vision",
+      "url": "https://ollama.com/library/llama3.2-vision",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "11b",
+        "90b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.334381"
+    },
+    {
+      "name": "codellama",
+      "url": "https://ollama.com/library/codellama",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "34b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.334741"
+    },
+    {
+      "name": "tinyllama",
+      "url": "https://ollama.com/library/tinyllama",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.1b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.335047"
+    },
+    {
+      "name": "mistral-nemo",
+      "url": "https://ollama.com/library/mistral-nemo",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "12b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.335369"
+    },
+    {
+      "name": "minicpm-v",
+      "url": "https://ollama.com/library/minicpm-v",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.335686"
+    },
+    {
+      "name": "qwq",
+      "url": "https://ollama.com/library/qwq",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.336006"
+    },
+    {
+      "name": "deepseek-v3",
+      "url": "https://ollama.com/library/deepseek-v3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "671b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.336306"
+    },
+    {
+      "name": "dolphin3",
+      "url": "https://ollama.com/library/dolphin3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.336612"
+    },
+    {
+      "name": "olmo2",
+      "url": "https://ollama.com/library/olmo2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.336933"
+    },
+    {
+      "name": "bge-m3",
+      "url": "https://ollama.com/library/bge-m3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "567m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.337264"
+    },
+    {
+      "name": "llama2-uncensored",
+      "url": "https://ollama.com/library/llama2-uncensored",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.337593"
+    },
+    {
+      "name": "mixtral",
+      "url": "https://ollama.com/library/mixtral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "8x7b",
+        "8x22b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.337931"
+    },
+    {
+      "name": "starcoder2",
+      "url": "https://ollama.com/library/starcoder2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b",
+        "7b",
+        "15b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.338269"
+    },
+    {
+      "name": "llava-llama3",
+      "url": "https://ollama.com/library/llava-llama3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.338591"
+    },
+    {
+      "name": "mistral-small",
+      "url": "https://ollama.com/library/mistral-small",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "22b",
+        "24b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.338925"
+    },
+    {
+      "name": "deepseek-coder-v2",
+      "url": "https://ollama.com/library/deepseek-coder-v2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "16b",
+        "236b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.339241"
+    },
+    {
+      "name": "smollm2",
+      "url": "https://ollama.com/library/smollm2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "135m",
+        "360m",
+        "1.7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.339600"
+    },
+    {
+      "name": "snowflake-arctic-embed",
+      "url": "https://ollama.com/library/snowflake-arctic-embed",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "22m",
+        "33m",
+        "110m",
+        "137m",
+        "335m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.339993"
+    },
+    {
+      "name": "deepseek-coder",
+      "url": "https://ollama.com/library/deepseek-coder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.3b",
+        "6.7b",
+        "33b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.340332"
+    },
+    {
+      "name": "codegemma",
+      "url": "https://ollama.com/library/codegemma",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2b",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.340656"
+    },
+    {
+      "name": "dolphin-mixtral",
+      "url": "https://ollama.com/library/dolphin-mixtral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8x7b",
+        "8x22b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.340978"
+    },
+    {
+      "name": "phi",
+      "url": "https://ollama.com/library/phi",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2.7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.341281"
+    },
+    {
+      "name": "openthinker",
+      "url": "https://ollama.com/library/openthinker",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.341604"
+    },
+    {
+      "name": "all-minilm",
+      "url": "https://ollama.com/library/all-minilm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "22m",
+        "33m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.341942"
+    },
+    {
+      "name": "wizardlm2",
+      "url": "https://ollama.com/library/wizardlm2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "8x22b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.342263"
+    },
+    {
+      "name": "dolphin-mistral",
+      "url": "https://ollama.com/library/dolphin-mistral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.342567"
+    },
+    {
+      "name": "orca-mini",
+      "url": "https://ollama.com/library/orca-mini",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b",
+        "7b",
+        "13b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.342920"
+    },
+    {
+      "name": "dolphin-llama3",
+      "url": "https://ollama.com/library/dolphin-llama3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.343239"
+    },
+    {
+      "name": "command-r",
+      "url": "https://ollama.com/library/command-r",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "35b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.343576"
+    },
+    {
+      "name": "codestral",
+      "url": "https://ollama.com/library/codestral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "22b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.343878"
+    },
+    {
+      "name": "hermes3",
+      "url": "https://ollama.com/library/hermes3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "3b",
+        "8b",
+        "70b",
+        "405b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.344250"
+    },
+    {
+      "name": "phi3.5",
+      "url": "https://ollama.com/library/phi3.5",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.344580"
+    },
+    {
+      "name": "yi",
+      "url": "https://ollama.com/library/yi",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "6b",
+        "9b",
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.344926"
+    },
+    {
+      "name": "zephyr",
+      "url": "https://ollama.com/library/zephyr",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "141b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.345248"
+    },
+    {
+      "name": "smollm",
+      "url": "https://ollama.com/library/smollm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "135m",
+        "360m",
+        "1.7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.345589"
+    },
+    {
+      "name": "granite-code",
+      "url": "https://ollama.com/library/granite-code",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b",
+        "8b",
+        "20b",
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.345941"
+    },
+    {
+      "name": "wizard-vicuna-uncensored",
+      "url": "https://ollama.com/library/wizard-vicuna-uncensored",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "30b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.346275"
+    },
+    {
+      "name": "starcoder",
+      "url": "https://ollama.com/library/starcoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1b",
+        "3b",
+        "7b",
+        "15b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.346633"
+    },
+    {
+      "name": "moondream",
+      "url": "https://ollama.com/library/moondream",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "1.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.346952"
+    },
+    {
+      "name": "vicuna",
+      "url": "https://ollama.com/library/vicuna",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "33b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.347288"
+    },
+    {
+      "name": "mistral-openorca",
+      "url": "https://ollama.com/library/mistral-openorca",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.347592"
+    },
+    {
+      "name": "openchat",
+      "url": "https://ollama.com/library/openchat",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.347889"
+    },
+    {
+      "name": "phi4-mini",
+      "url": "https://ollama.com/library/phi4-mini",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "3.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.348206"
+    },
+    {
+      "name": "deepseek-v2",
+      "url": "https://ollama.com/library/deepseek-v2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "16b",
+        "236b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.348540"
+    },
+    {
+      "name": "llama2-chinese",
+      "url": "https://ollama.com/library/llama2-chinese",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.348860"
+    },
+    {
+      "name": "openhermes",
+      "url": "https://ollama.com/library/openhermes",
+      "description": "No description",
+      "sizes": [],
+      "tags": [],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.349143"
+    },
+    {
+      "name": "deepseek-llm",
+      "url": "https://ollama.com/library/deepseek-llm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "67b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.349463"
+    },
+    {
+      "name": "codeqwen",
+      "url": "https://ollama.com/library/codeqwen",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.349766"
+    },
+    {
+      "name": "codegeex4",
+      "url": "https://ollama.com/library/codegeex4",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "9b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.350070"
+    },
+    {
+      "name": "aya",
+      "url": "https://ollama.com/library/aya",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "35b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.350391"
+    },
+    {
+      "name": "mistral-large",
+      "url": "https://ollama.com/library/mistral-large",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "123b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.350711"
+    },
+    {
+      "name": "glm4",
+      "url": "https://ollama.com/library/glm4",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "9b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.351017"
+    },
+    {
+      "name": "stable-code",
+      "url": "https://ollama.com/library/stable-code",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.351330"
+    },
+    {
+      "name": "tinydolphin",
+      "url": "https://ollama.com/library/tinydolphin",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.1b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.351636"
+    },
+    {
+      "name": "nous-hermes2",
+      "url": "https://ollama.com/library/nous-hermes2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "10.7b",
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.351956"
+    },
+    {
+      "name": "qwen2-math",
+      "url": "https://ollama.com/library/qwen2-math",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.5b",
+        "7b",
+        "72b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.352294"
+    },
+    {
+      "name": "deepcoder",
+      "url": "https://ollama.com/library/deepcoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.5b",
+        "14b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.352619"
+    },
+    {
+      "name": "command-r-plus",
+      "url": "https://ollama.com/library/command-r-plus",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "104b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.352963"
+    },
+    {
+      "name": "wizardcoder",
+      "url": "https://ollama.com/library/wizardcoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "33b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.353278"
+    },
+    {
+      "name": "bakllava",
+      "url": "https://ollama.com/library/bakllava",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.353605"
+    },
+    {
+      "name": "mistral-small3.1",
+      "url": "https://ollama.com/library/mistral-small3.1",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "tools",
+        "24b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.353943"
+    },
+    {
+      "name": "stablelm2",
+      "url": "https://ollama.com/library/stablelm2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.6b",
+        "12b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.354266"
+    },
+    {
+      "name": "neural-chat",
+      "url": "https://ollama.com/library/neural-chat",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.354577"
+    },
+    {
+      "name": "sqlcoder",
+      "url": "https://ollama.com/library/sqlcoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "15b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.354898"
+    },
+    {
+      "name": "reflection",
+      "url": "https://ollama.com/library/reflection",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.355201"
+    },
+    {
+      "name": "llama3-chatqa",
+      "url": "https://ollama.com/library/llama3-chatqa",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.355526"
+    },
+    {
+      "name": "wizard-math",
+      "url": "https://ollama.com/library/wizard-math",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.355867"
+    },
+    {
+      "name": "bge-large",
+      "url": "https://ollama.com/library/bge-large",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "335m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.356188"
+    },
+    {
+      "name": "granite3.2",
+      "url": "https://ollama.com/library/granite3.2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "2b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.356552"
+    },
+    {
+      "name": "llama3-gradient",
+      "url": "https://ollama.com/library/llama3-gradient",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.356871"
+    },
+    {
+      "name": "granite3-dense",
+      "url": "https://ollama.com/library/granite3-dense",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "2b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.357211"
+    },
+    {
+      "name": "granite3.1-dense",
+      "url": "https://ollama.com/library/granite3.1-dense",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "2b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.357555"
+    },
+    {
+      "name": "samantha-mistral",
+      "url": "https://ollama.com/library/samantha-mistral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.357857"
+    },
+    {
+      "name": "llava-phi3",
+      "url": "https://ollama.com/library/llava-phi3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "3.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.358182"
+    },
+    {
+      "name": "cogito",
+      "url": "https://ollama.com/library/cogito",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "3b",
+        "8b",
+        "14b",
+        "32b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.358582"
+    },
+    {
+      "name": "dolphincoder",
+      "url": "https://ollama.com/library/dolphincoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "15b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.358903"
+    },
+    {
+      "name": "nous-hermes",
+      "url": "https://ollama.com/library/nous-hermes",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.359224"
+    },
+    {
+      "name": "xwinlm",
+      "url": "https://ollama.com/library/xwinlm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.359547"
+    },
+    {
+      "name": "starling-lm",
+      "url": "https://ollama.com/library/starling-lm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.359905"
+    },
+    {
+      "name": "phind-codellama",
+      "url": "https://ollama.com/library/phind-codellama",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.360215"
+    },
+    {
+      "name": "snowflake-arctic-embed2",
+      "url": "https://ollama.com/library/snowflake-arctic-embed2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "568m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.360547"
+    },
+    {
+      "name": "granite3.2-vision",
+      "url": "https://ollama.com/library/granite3.2-vision",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "vision",
+        "tools",
+        "2b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.360896"
+    },
+    {
+      "name": "yi-coder",
+      "url": "https://ollama.com/library/yi-coder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.5b",
+        "9b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.361222"
+    },
+    {
+      "name": "nemotron-mini",
+      "url": "https://ollama.com/library/nemotron-mini",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "4b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.361548"
+    },
+    {
+      "name": "solar",
+      "url": "https://ollama.com/library/solar",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "10.7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.361849"
+    },
+    {
+      "name": "athene-v2",
+      "url": "https://ollama.com/library/athene-v2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "72b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.362170"
+    },
+    {
+      "name": "yarn-llama2",
+      "url": "https://ollama.com/library/yarn-llama2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.362497"
+    },
+    {
+      "name": "deepscaler",
+      "url": "https://ollama.com/library/deepscaler",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.5b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.362802"
+    },
+    {
+      "name": "internlm2",
+      "url": "https://ollama.com/library/internlm2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1m",
+        "1.8b",
+        "7b",
+        "20b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.363154"
+    },
+    {
+      "name": "wizardlm",
+      "url": "https://ollama.com/library/wizardlm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.363439"
+    },
+    {
+      "name": "exaone3.5",
+      "url": "https://ollama.com/library/exaone3.5",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2.4b",
+        "7.8b",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.363774"
+    },
+    {
+      "name": "dolphin-phi",
+      "url": "https://ollama.com/library/dolphin-phi",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2.7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.364073"
+    },
+    {
+      "name": "falcon",
+      "url": "https://ollama.com/library/falcon",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "40b",
+        "180b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.364414"
+    },
+    {
+      "name": "granite3.3",
+      "url": "https://ollama.com/library/granite3.3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "2b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.364765"
+    },
+    {
+      "name": "nemotron",
+      "url": "https://ollama.com/library/nemotron",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.365089"
+    },
+    {
+      "name": "llama3-groq-tool-use",
+      "url": "https://ollama.com/library/llama3-groq-tool-use",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.365447"
+    },
+    {
+      "name": "orca2",
+      "url": "https://ollama.com/library/orca2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.365769"
+    },
+    {
+      "name": "wizardlm-uncensored",
+      "url": "https://ollama.com/library/wizardlm-uncensored",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.366074"
+    },
+    {
+      "name": "aya-expanse",
+      "url": "https://ollama.com/library/aya-expanse",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "8b",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.366421"
+    },
+    {
+      "name": "paraphrase-multilingual",
+      "url": "https://ollama.com/library/paraphrase-multilingual",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "278m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.366740"
+    },
+    {
+      "name": "stable-beluga",
+      "url": "https://ollama.com/library/stable-beluga",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "13b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.367074"
+    },
+    {
+      "name": "nous-hermes2-mixtral",
+      "url": "https://ollama.com/library/nous-hermes2-mixtral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8x7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.367380"
+    },
+    {
+      "name": "smallthinker",
+      "url": "https://ollama.com/library/smallthinker",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.367682"
+    },
+    {
+      "name": "phi4-reasoning",
+      "url": "https://ollama.com/library/phi4-reasoning",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "14b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.367985"
+    },
+    {
+      "name": "falcon3",
+      "url": "https://ollama.com/library/falcon3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1b",
+        "3b",
+        "7b",
+        "10b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.368347"
+    },
+    {
+      "name": "meditron",
+      "url": "https://ollama.com/library/meditron",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.368673"
+    },
+    {
+      "name": "deepseek-v2.5",
+      "url": "https://ollama.com/library/deepseek-v2.5",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "236b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.368978"
+    },
+    {
+      "name": "medllama2",
+      "url": "https://ollama.com/library/medllama2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.369284"
+    },
+    {
+      "name": "granite-embedding",
+      "url": "https://ollama.com/library/granite-embedding",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "embedding",
+        "30m",
+        "278m"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.369625"
+    },
+    {
+      "name": "granite3-moe",
+      "url": "https://ollama.com/library/granite3-moe",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "1b",
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.369963"
+    },
+    {
+      "name": "llama-pro",
+      "url": "https://ollama.com/library/llama-pro",
+      "description": "No description",
+      "sizes": [],
+      "tags": [],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.370249"
+    },
+    {
+      "name": "yarn-mistral",
+      "url": "https://ollama.com/library/yarn-mistral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.370555"
+    },
+    {
+      "name": "opencoder",
+      "url": "https://ollama.com/library/opencoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1.5b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.370874"
+    },
+    {
+      "name": "granite3.1-moe",
+      "url": "https://ollama.com/library/granite3.1-moe",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "1b",
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.371218"
+    },
+    {
+      "name": "exaone-deep",
+      "url": "https://ollama.com/library/exaone-deep",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2.4b",
+        "7.8b",
+        "32b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.371558"
+    },
+    {
+      "name": "nexusraven",
+      "url": "https://ollama.com/library/nexusraven",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.371865"
+    },
+    {
+      "name": "shieldgemma",
+      "url": "https://ollama.com/library/shieldgemma",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2b",
+        "9b",
+        "27b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.372201"
+    },
+    {
+      "name": "codeup",
+      "url": "https://ollama.com/library/codeup",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.372529"
+    },
+    {
+      "name": "everythinglm",
+      "url": "https://ollama.com/library/everythinglm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.372873"
+    },
+    {
+      "name": "llama-guard3",
+      "url": "https://ollama.com/library/llama-guard3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.373217"
+    },
+    {
+      "name": "reader-lm",
+      "url": "https://ollama.com/library/reader-lm",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "0.5b",
+        "1.5b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.373547"
+    },
+    {
+      "name": "stablelm-zephyr",
+      "url": "https://ollama.com/library/stablelm-zephyr",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.373861"
+    },
+    {
+      "name": "mathstral",
+      "url": "https://ollama.com/library/mathstral",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.374167"
+    },
+    {
+      "name": "solar-pro",
+      "url": "https://ollama.com/library/solar-pro",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "22b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.374472"
+    },
+    {
+      "name": "marco-o1",
+      "url": "https://ollama.com/library/marco-o1",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.374775"
+    },
+    {
+      "name": "r1-1776",
+      "url": "https://ollama.com/library/r1-1776",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "70b",
+        "671b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.375098"
+    },
+    {
+      "name": "duckdb-nsql",
+      "url": "https://ollama.com/library/duckdb-nsql",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.375406"
+    },
+    {
+      "name": "falcon2",
+      "url": "https://ollama.com/library/falcon2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "11b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.375705"
+    },
+    {
+      "name": "command-r7b",
+      "url": "https://ollama.com/library/command-r7b",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.376023"
+    },
+    {
+      "name": "magicoder",
+      "url": "https://ollama.com/library/magicoder",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.376325"
+    },
+    {
+      "name": "mistrallite",
+      "url": "https://ollama.com/library/mistrallite",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.376630"
+    },
+    {
+      "name": "codebooga",
+      "url": "https://ollama.com/library/codebooga",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "34b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.376931"
+    },
+    {
+      "name": "wizard-vicuna",
+      "url": "https://ollama.com/library/wizard-vicuna",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.377236"
+    },
+    {
+      "name": "nuextract",
+      "url": "https://ollama.com/library/nuextract",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.377542"
+    },
+    {
+      "name": "bespoke-minicheck",
+      "url": "https://ollama.com/library/bespoke-minicheck",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.377845"
+    },
+    {
+      "name": "megadolphin",
+      "url": "https://ollama.com/library/megadolphin",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "120b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.378149"
+    },
+    {
+      "name": "tulu3",
+      "url": "https://ollama.com/library/tulu3",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8b",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.378474"
+    },
+    {
+      "name": "notux",
+      "url": "https://ollama.com/library/notux",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "8x7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.378779"
+    },
+    {
+      "name": "open-orca-platypus2",
+      "url": "https://ollama.com/library/open-orca-platypus2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "13b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.379083"
+    },
+    {
+      "name": "notus",
+      "url": "https://ollama.com/library/notus",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.379387"
+    },
+    {
+      "name": "goliath",
+      "url": "https://ollama.com/library/goliath",
+      "description": "No description",
+      "sizes": [],
+      "tags": [],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.379673"
+    },
+    {
+      "name": "firefunction-v2",
+      "url": "https://ollama.com/library/firefunction-v2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "70b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.379995"
+    },
+    {
+      "name": "dbrx",
+      "url": "https://ollama.com/library/dbrx",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "132b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.380299"
+    },
+    {
+      "name": "granite3-guardian",
+      "url": "https://ollama.com/library/granite3-guardian",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "2b",
+        "8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.380622"
+    },
+    {
+      "name": "phi4-mini-reasoning",
+      "url": "https://ollama.com/library/phi4-mini-reasoning",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "3.8b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.380924"
+    },
+    {
+      "name": "alfred",
+      "url": "https://ollama.com/library/alfred",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "40b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.381225"
+    },
+    {
+      "name": "command-a",
+      "url": "https://ollama.com/library/command-a",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "111b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.381546"
+    },
+    {
+      "name": "sailor2",
+      "url": "https://ollama.com/library/sailor2",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "1b",
+        "8b",
+        "20b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.381881"
+    },
+    {
+      "name": "command-r7b-arabic",
+      "url": "https://ollama.com/library/command-r7b-arabic",
+      "description": "No description",
+      "sizes": [],
+      "tags": [
+        "tools",
+        "7b"
+      ],
+      "metadata": {},
+      "scraped_at": "2025-05-29T16:17:12.382202"
+    }
+  ]
+}
