@@ -315,7 +315,23 @@ def interactive_shell(mock_mode=False):
         elif args[0] == "default":
             print("Default model:", models.get_default_model())
         elif args[0] == "update":
-            models.update_models_from_ollama()
+            # Update models from Ollama
+            print("Updating models from Ollama...")
+            try:
+                logger.debug('Starting update of Ollama models')
+                from getllm.models import update_models_from_ollama
+                success = update_models_from_ollama()
+                
+                if success:
+                    logger.info('Successfully updated models from Ollama')
+                    print("Successfully updated models from Ollama.")
+                else:
+                    logger.error('Failed to update models from Ollama')
+                    print("Error updating models from Ollama. Check logs for details.")
+            except Exception as e:
+                logger.error(f'Error during Ollama models update: {e}', exc_info=True)
+                print(f"Error updating models from Ollama: {e}")
+                print("Check logs for more details or run with --debug flag for verbose output.")
         elif args[0] == "test":
             default = models.get_default_model()
             print(f"Test default model: {default}")
