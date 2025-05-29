@@ -131,7 +131,7 @@ def update_models_from_ollama() -> bool:
         ollama_models = ollama_manager.get_available_models()
         # Update metadata
         for model in ollama_models:
-            metadata_manager.update_model_metadata(
+            metadata_manager.update_metadata(
                 model['name'],
                 {"source": "ollama", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
@@ -151,7 +151,7 @@ def update_models_metadata() -> bool:
         # Update Hugging Face models metadata
         hf_models = huggingface_manager.get_available_models()
         for model in hf_models:
-            metadata_manager.update_model_metadata(
+            metadata_manager.update_metadata(
                 model['name'],
                 {"source": "huggingface", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
@@ -281,7 +281,7 @@ def update_models_from_huggingface(query: str = None, limit: int = 20) -> bool:
         models = search_huggingface_models(query=query, limit=limit)
         # Update metadata for each model
         for model in models:
-            metadata_manager.update_model_metadata(
+            metadata_manager.update_metadata(
                 model.get('name', model.get('id', '')),
                 {"source": "huggingface", "last_updated": str(metadata_manager.get_current_timestamp())}
             )
