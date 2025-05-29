@@ -303,6 +303,18 @@ class OllamaServer:
             logger.error(error_msg)
             raise ServerError(error_msg) from e
     
+    def query_ollama(self, *args, **kwargs):
+        """Alias for query method for backward compatibility.
+        
+        This method is kept for backward compatibility with code that expects
+        the query_ollama method. It simply calls the query method with the
+        provided arguments.
+        
+        Returns:
+            The generated text from the query method
+        """
+        return self.query(*args, **kwargs)
+        
     def chat(
         self,
         messages: List[Dict[str, str]],

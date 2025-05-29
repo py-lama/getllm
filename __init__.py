@@ -7,6 +7,8 @@ This package provides functionality for managing, installing, and configuring
 LLM models for use with the Ollama API.
 """
 
+__version__ = "0.1.0"
+
 # Import from the getllm subpackage
 from getllm.getllm.models import (
     get_models, 
@@ -22,19 +24,48 @@ from getllm.getllm.ollama import (
     start_ollama_server,
     install_ollama_model,
     list_ollama_models,
+    get_ollama_model_info,
+    remove_ollama_model,
+    pull_ollama_model,
+    push_ollama_model,
     OllamaError,
     ModelNotFoundError
 )
 
+# Import the CLI
+try:
+    from getllm.cli import cli
+    CLI_AVAILABLE = True
+except ImportError:
+    import warnings
+    warnings.warn("CLI dependencies not installed. Install with 'pip install getllm[cli]'")
+    CLI_AVAILABLE = False
+
 __all__ = [
+    # Model management functions
     'get_models',
     'get_default_model',
     'set_default_model',
     'install_model',
     'list_installed_models',
     'update_models_from_ollama',
+    
+    # Ollama integration
+    'OllamaIntegration',
     'get_ollama_integration',
     'start_ollama_server',
     'install_ollama_model',
     'list_ollama_models',
+    'get_ollama_model_info',
+    'remove_ollama_model',
+    'pull_ollama_model',
+    'push_ollama_model',
+    
+    # Exceptions
+    'OllamaError',
+    'ModelNotFoundError'
 ]
+
+# Only expose cli if available
+if CLI_AVAILABLE:
+    __all__.append('cli')
