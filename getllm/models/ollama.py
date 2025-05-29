@@ -3,6 +3,8 @@ Ollama model manager for handling Ollama models.
 """
 import json
 import os
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Optional, Any, Union
 import subprocess
@@ -37,6 +39,9 @@ class OllamaModelManager(BaseModelManager):
         # Ensure the directories exist
         self.logs_dir.mkdir(parents=True, exist_ok=True)
         self.models_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize models cache
+        self._models_cache = []
     
     def get_available_models(self, limit: Optional[int] = None, force_refresh: bool = False) -> List[Dict]:
         """
@@ -115,6 +120,7 @@ class OllamaModelManager(BaseModelManager):
                     json.dump({
                         'models': models,
                         'count': len(models),
+                        'last_updated': datetime.utcnow().isoformat(),
                         'source': 'ollama',
                         'updated_at': time.strftime('%Y-%m-%d %H:%M:%S')
                     }, f, indent=2)
