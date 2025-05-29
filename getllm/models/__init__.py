@@ -17,7 +17,13 @@ from .huggingface import HuggingFaceModelManager
 from .ollama import OllamaModelManager
 from .metadata import ModelMetadataManager
 from .interactive import interactive_model_search
-from ..utils.config import get_models_dir, get_models_metadata_path, get_config_dir
+from .utils import (
+    get_models_dir,
+    get_models_metadata_path,
+    get_config_dir,
+    update_models_metadata,
+    update_models_from_ollama
+)
 
 # Initialize model managers
 huggingface_manager = HuggingFaceModelManager()

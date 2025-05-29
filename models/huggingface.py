@@ -37,26 +37,41 @@ def search_huggingface_models(query: str = None, limit: int = 20) -> List[Dict]:
     Returns:
         A list of dictionaries containing model information.
     """
-    # First try to load from cache
-    models = load_huggingface_models_from_cache()
-    
-    # If no cached models, use the default ones
-    if not models:
-        models = DEFAULT_HF_MODELS
-    
-    # Filter by query if provided
-    if query:
-        query = query.lower()
-        filtered_models = []
-        for model in models:
-            if (query in model.get('id', '').lower() or 
-                query in model.get('name', '').lower() or 
-                query in model.get('description', '').lower() or
-                any(query in tag.lower() for tag in model.get('tags', []))):
-                filtered_models.append(model)
-        models = filtered_models
-    
-    return models[:limit]
+    try:
+        # First try to update from web to get fresh results
+        success, _ = update_huggingface_models_cache(limit=50)
+        
+        # If web update failed, try to load from cache
+        if not success:
+            models = load_huggingface_models_from_cache()
+            # If no cached models, use the default ones
+            if not models:
+                models = DEFAULT_HF_MODELS
+        else:
+            # Reload models after update
+            models = load_huggingface_models_from_cache()
+        
+        # Filter by query if provided
+        if query:
+            query = query.lower()
+            filtered_models = []
+            for model in models:
+                if (query in model.get('id', '').lower() or 
+                    query in model.get('name', '').lower() or 
+                    query in model.get('description', '').lower() or
+                    any(query in str(tag).lower() for tag in model.get('tags', []))):
+                    filtered_models.append(model)
+            models = filtered_models
+        
+        return models[:limit]
+        
+    except Exception as e:
+        logger.warning(f"Error searching Hugging Face models: {e}")
+        # Fall back to default models if there's an error
+        return [m for m in DEFAULT_HF_MODELS 
+               if not query or 
+               query.lower() in m.get('name', '').lower() or 
+               query.lower() in m.get('description', '').lower()]
 
 def update_huggingface_models_cache(limit: int = 50) -> Tuple[bool, str]:
     """
@@ -70,15 +85,55 @@ def update_huggingface_models_cache(limit: int = 50) -> Tuple[bool, str]:
     """
     try:
         # Create models directory if it doesn't exist
-        os.makedirs(get_models_dir(), exist_ok=True)
+        cache_dir = os.path.dirname(get_hf_models_cache_path())
+        os.makedirs(cache_dir, exist_ok=True)
         
-        # Scrape the Hugging Face models page for GGUF models
-        url = "https://huggingface.co/models?sort=trending&search=GGUF"
-        response = requests.get(url, headers=HEADERS, timeout=30)
-        response.raise_for_status()
+        # Try to use the Hugging Face API first
+        try:
+            # Use the API to search for GGUF models
+            api_url = "https://huggingface.co/api/models"
+            params = {
+                'search': 'GGUF',
+                'sort': 'downloads',
+                'direction': '-1',
+                'limit': min(limit, 100),  # API has a max limit
+                'full': 'false'
+            }
+            
+            response = requests.get(api_url, headers=HEADERS, params=params, timeout=30)
+            response.raise_for_status()
+            api_models = response.json()
+            
+            models = []
+            for model in api_models:
+                models.append({
+                    'id': model.get('modelId', ''),
+                    'name': model.get('modelId', '').split('/')[-1],
+                    'author': model.get('author', ''),
+                    'description': model.get('cardData', {}).get('description', ''),
+                    'downloads': model.get('downloads', 0),
+                    'likes': model.get('likes', 0),
+                    'tags': model.get('tags', []) + (['gguf'] if 'gguf' not in model.get('tags', []) else [])
+                })
+                
+            if models:
+                # Save to cache
+                with open(get_hf_models_cache_path(), 'w', encoding='utf-8') as f:
+                    json.dump(models, f, indent=2, ensure_ascii=False)
+                return True, f"Successfully updated {len(models)} models from Hugging Face API"
+                
+        except Exception as api_error:
+            logger.warning(f"HF API request failed, falling back to web scraping: {api_error}")
         
-        soup = BeautifulSoup(response.text, 'html.parser')
-        model_cards = soup.find_all('article', {'class': 'card'})
+        # Fall back to web scraping if API fails
+        try:
+            # Scrape the Hugging Face models page for GGUF models
+            url = "https://huggingface.co/models?sort=trending&search=GGUF"
+            response = requests.get(url, headers=HEADERS, timeout=30)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            model_cards = soup.find_all('article', {'class': 'card'})
         
         models = []
         for card in tqdm(model_cards[:limit], desc="Fetching models"):

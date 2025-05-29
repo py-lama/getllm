@@ -46,24 +46,34 @@ from .manager import ModelManager
 from .constants import DEFAULT_MODELS, DEFAULT_HF_MODELS
 from .utils import (
     get_models_dir,
+    get_models_metadata_path,
+    get_hf_models_cache_path,
+    get_ollama_models_cache_path,
     get_default_model,
     set_default_model,
     get_models,
     install_model,
     list_installed_models,
-    update_models_metadata,
     get_model_metadata,
     load_huggingface_models_from_cache,
-    load_ollama_models_from_cache
+    load_ollama_models_from_cache,
+    save_models_to_json,
+    load_models_from_json,
+    ensure_models_dir
 )
+
+# For backward compatibility
+update_models_metadata = save_models_to_json
+update_models_from_ollama = load_ollama_models_from_cache
+update_models_from_huggingface = load_huggingface_models_from_cache
+
+# Import additional components
 from .huggingface import (
     search_huggingface_models,
     interactive_model_search,
-    update_models_from_huggingface,
     update_huggingface_models_cache
 )
 from .ollama import (
-    update_models_from_ollama,
     update_ollama_models_cache,
     list_ollama_models,
     install_ollama_model
@@ -79,12 +89,18 @@ __all__ = [
     
     # Core functions
     'get_models_dir',
+    'get_models_metadata_path',
+    'get_hf_models_cache_path',
+    'get_ollama_models_cache_path',
     'get_default_model',
     'set_default_model',
     'get_models',
     'install_model',
     'list_installed_models',
     'get_model_metadata',
+    'save_models_to_json',
+    'load_models_from_json',
+    'ensure_models_dir',
     'update_models_metadata',
     
     # Hugging Face integration
@@ -99,7 +115,7 @@ __all__ = [
     'update_models_from_ollama',
     'update_ollama_models_cache',
     'list_ollama_models',
-    'install_ollama_model',
+    'install_ollama_model'
 ]
 
 # Initialize the default model manager instance
