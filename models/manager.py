@@ -1,54 +1,402 @@
 """
 Model management for PyLLM.
+
+This module provides a unified interface for managing LLM models
+from various sources including Ollama and Hugging Face.
 """
 
 import os
 import logging
-from typing import List, Dict, Optional, Any
+from typing import List, Dict, Optional, Any, Union, Type, TypeVar
+from pathlib import Path
 
-from .utils import (
-    get_models_dir,
-    get_default_model,
-    set_default_model,
-    get_models,
-    install_model,
-    list_installed_models,
-    get_model_metadata
-)
-from .huggingface import search_huggingface_models, interactive_model_search
-from .ollama import update_ollama_models_cache, list_ollama_models, install_ollama_model
+from .base import BaseModel, BaseModelManager, ModelMetadata, ModelSource, ModelType
+from .huggingface.manager import HuggingFaceModelManager, get_hf_model_manager
+from .ollama.manager import OllamaModelManager, get_ollama_model_manager
+from ..exceptions import ModelError, ModelNotFoundError, ModelInstallationError
 
 logger = logging.getLogger(__name__)
 
+# Type variable for model managers
+M = TypeVar('M', bound=BaseModelManager)
+
+
 class ModelManager:
     """
-    Class for managing LLM models in the PyLLM system.
+    Unified model manager for PyLLM.
     
-    This class provides methods for listing, installing, and using models
-    from various sources including Ollama and Hugging Face.
+    This class provides a single interface for managing models from
+    different sources (Ollama, Hugging Face, etc.) with a consistent API.
     """
     
-    def __init__(self):
-        """Initialize the ModelManager with default settings."""
-        self.default_model = get_default_model() or "llama3"
-        self.models = self.get_available_models()
-    
-    def get_available_models(self) -> List[Dict]:
-        """
-        Get a list of available models from the models.json file or default list.
+    def __init__(
+        self,
+        default_source: str = "ollama",
+        cache_dir: Optional[str] = None,
+        **kwargs
+    ):
+        """Initialize the ModelManager.
         
-        Returns:
-            A list of dictionaries containing model information.
+        Args:
+            default_source: Default model source ('ollama' or 'huggingface')
+            cache_dir: Directory to cache model metadata
+            **kwargs: Additional arguments to pass to model managers
         """
-        return get_models()
-    
-    def list_models(self) -> List[Dict]:
-        """
-        Return a list of available models.
+        self.default_source = default_source.lower()
+        self.cache_dir = cache_dir or os.path.join(
+            os.path.expanduser("~"), ".cache", "getllm"
+        )
         
+        # Initialize model managers
+        self._managers: Dict[str, BaseModelManager] = {}
+        self._init_managers(**kwargs)
+        
+        # Set default model
+        self.default_model = os.getenv("GETLLM_DEFAULT_MODEL", "llama3")
+    
+    def _init_managers(self, **kwargs) -> None:
+        """Initialize model managers for each source."""
+        # Ollama manager
+        ollama_kwargs = {
+            k[8:]: v for k, v in kwargs.items() if k.startswith("ollama_")
+        }
+        self._managers["ollama"] = get_ollama_model_manager(
+            cache_dir=os.path.join(self.cache_dir, "ollama"),
+            **ollama_kwargs
+        )
+        
+        # Hugging Face manager
+        hf_kwargs = {
+            k[3:]: v for k, v in kwargs.items() if k.startswith("hf_")
+        }
+        self._managers["huggingface"] = get_hf_model_manager(
+            cache_dir=os.path.join(self.cache_dir, "huggingface"),
+            **hf_kwargs
+        )
+    
+    def _get_manager(self, source: Optional[str] = None) -> BaseModelManager:
+        """Get the model manager for the specified source.
+        
+        Args:
+            source: Model source ('ollama', 'huggingface', etc.)
+            
         Returns:
-            A list of dictionaries containing model information.
+            The model manager instance
+            
+        Raises:
+            ValueError: If the source is not supported
         """
+        source = (source or self.default_source).lower()
+        if source not in self._managers:
+            raise ValueError(f"Unsupported model source: {source}")
+        return self._managers[source]
+    
+    def list_models(
+        self, 
+        source: Optional[str] = None,
+        **filters
+    ) -> List[ModelMetadata]:
+        """List available models.
+        
+        Args:
+            source: Model source ('ollama', 'huggingface', etc.)
+            **filters: Additional filters to apply
+                - model_type: Filter by model type (e.g., 'text', 'code')
+                - tags: List of tags to filter by
+                - min_size: Minimum model size in bytes
+                - max_size: Maximum model size in bytes
+                
+        Returns:
+            List of ModelMetadata objects
+        """
+        if source:
+            return self._get_manager(source).list_models()
+        
+        # List models from all sources if no source is specified
+        all_models = []
+        for manager in self._managers.values():
+            try:
+                all_models.extend(manager.list_models())
+            except Exception as e:
+                logger.warning(f"Error listing models from {manager.__class__.__name__}: {e}")
+        
+        # Apply filters
+        if filters:
+            all_models = self._filter_models(all_models, **filters)
+        
+        return all_models
+    
+    def _filter_models(
+        self, 
+        models: List[ModelMetadata], 
+        **filters
+    ) -> List[ModelMetadata]:
+        """Filter models based on the provided criteria.
+        
+        Args:
+            models: List of models to filter
+            **filters: Filter criteria
+                - model_type: Filter by model type
+                - tags: List of tags to filter by
+                - min_size: Minimum model size in bytes
+                - max_size: Maximum model size in bytes
+                
+        Returns:
+            Filtered list of models
+        """
+        filtered = models
+        
+        if "model_type" in filters:
+            model_type = ModelType(filters["model_type"])
+            filtered = [m for m in filtered if m.model_type == model_type]
+        
+        if "tags" in filters:
+            tags = set(tag.lower() for tag in filters["tags"])
+            filtered = [
+                m for m in filtered 
+                if any(tag in (t.lower() for t in m.tags) for tag in tags)
+            ]
+        
+        if "min_size" in filters and filters["min_size"] is not None:
+            filtered = [m for m in filtered if m.size and m.size >= filters["min_size"]]
+        
+        if "max_size" in filters and filters["max_size"] is not None:
+            filtered = [m for m in filtered if m.size and m.size <= filters["max_size"]]
+        
+        return filtered
+    
+    def get_model(
+        self, 
+        model_id: str, 
+        source: Optional[str] = None
+    ) -> Optional[ModelMetadata]:
+        """Get a model by ID.
+        
+        Args:
+            model_id: The model ID
+            source: Optional source to look in ('ollama', 'huggingface')
+            
+        Returns:
+            ModelMetadata if found, None otherwise
+        """
+        if source:
+            return self._get_manager(source).get_model(model_id)
+        
+        # Search in all sources if no source is specified
+        for manager in self._managers.values():
+            try:
+                model = manager.get_model(model_id)
+                if model:
+                    return model
+            except Exception as e:
+                logger.debug(f"Error getting model {model_id} from {manager.__class__.__name__}: {e}")
+        
+        return None
+    
+    def install_model(
+        self, 
+        model_id: str, 
+        source: Optional[str] = None,
+        **kwargs
+    ) -> bool:
+        """Install a model.
+        
+        Args:
+            model_id: The model ID to install
+            source: Source to install from ('ollama', 'huggingface')
+            **kwargs: Additional installation options
+                - force: Force reinstall if already installed
+                - progress_callback: Callback for progress updates
+                
+        Returns:
+            bool: True if installation was successful
+            
+        Raises:
+            ModelInstallationError: If installation fails
+            ValueError: If source is not specified and model ID is ambiguous
+        """
+        if not source:
+            # Try to determine source from model ID
+            if ":" in model_id:
+                source = model_id.split(":")[0]
+            else:
+                # Check which manager can handle this model
+                possible_sources = []
+                for src, manager in self._managers.items():
+                    try:
+                        if manager.get_model(model_id):
+                            possible_sources.append(src)
+                    except Exception:
+                        pass
+                
+                if not possible_sources:
+                    raise ModelInstallationError(f"Could not find model {model_id} in any source")
+                if len(possible_sources) > 1:
+                    raise ValueError(
+                        f"Model ID {model_id} is ambiguous. "
+                        f"Please specify a source: {', '.join(possible_sources)}"
+                    )
+                source = possible_sources[0]
+        
+        manager = self._get_manager(source)
+        return manager.install_model(model_id, **kwargs)
+    
+    def uninstall_model(
+        self, 
+        model_id: str, 
+        source: Optional[str] = None
+    ) -> bool:
+        """Uninstall a model.
+        
+        Args:
+            model_id: The model ID to uninstall
+            source: Source to uninstall from ('ollama', 'huggingface')
+            
+        Returns:
+            bool: True if uninstallation was successful
+        """
+        if not source:
+            # Try to find which manager has this model
+            for src, manager in self._managers.items():
+                try:
+                    if manager.is_model_installed(model_id):
+                        return manager.uninstall_model(model_id)
+                except Exception as e:
+                    logger.debug(f"Error checking if model {model_id} is installed in {src}: {e}")
+            return False
+        
+        return self._get_manager(source).uninstall_model(model_id)
+    
+    def is_model_installed(
+        self, 
+        model_id: str, 
+        source: Optional[str] = None
+    ) -> bool:
+        """Check if a model is installed.
+        
+        Args:
+            model_id: The model ID to check
+            source: Source to check in ('ollama', 'huggingface')
+            
+        Returns:
+            bool: True if the model is installed
+        """
+        if source:
+            return self._get_manager(source).is_model_installed(model_id)
+        
+        # Check all sources if no source is specified
+        for manager in self._managers.values():
+            try:
+                if manager.is_model_installed(model_id):
+                    return True
+            except Exception as e:
+                logger.debug(f"Error checking if model {model_id} is installed: {e}")
+        
+        return False
+    
+    def search_models(
+        self, 
+        query: str, 
+        source: Optional[str] = None,
+        limit: int = 10,
+        **filters
+    ) -> List[ModelMetadata]:
+        """Search for models.
+        
+        Args:
+            query: Search query
+            source: Source to search in ('ollama', 'huggingface')
+            limit: Maximum number of results to return
+            **filters: Additional filters to apply
+                - model_type: Filter by model type
+                - tags: List of tags to filter by
+                - min_size: Minimum model size in bytes
+                - max_size: Maximum model size in bytes
+                
+        Returns:
+            List of matching ModelMetadata objects
+        """
+        if source:
+            manager = self._get_manager(source)
+            if hasattr(manager, 'search_models'):
+                return manager.search_models(query, limit=limit, **filters)
+            # Fall back to client-side filtering if search is not implemented
+            models = manager.list_models()
+        else:
+            # Search in all sources
+            models = self.list_models()
+        
+        # Simple client-side search
+        query = query.lower()
+        results = [
+            m for m in models 
+            if (query in m.name.lower() or 
+                query in (m.description or "").lower() or
+                any(query in tag.lower() for tag in m.tags))
+        ]
+        
+        # Apply additional filters
+        if filters:
+            results = self._filter_models(results, **filters)
+        
+        return results[:limit]
+    
+    def get_manager(self, source: str) -> BaseModelManager:
+        """Get the model manager for a specific source.
+        
+        Args:
+            source: Model source ('ollama', 'huggingface')
+            
+        Returns:
+            The model manager instance
+            
+        Raises:
+            ValueError: If the source is not supported
+        """
+        return self._get_manager(source)
+    
+    def set_default_model(self, model_id: str) -> bool:
+        """Set the default model.
+        
+        Args:
+            model_id: The model ID to set as default
+            
+        Returns:
+            bool: True if the default model was set successfully
+        """
+        if not self.is_model_installed(model_id):
+            return False
+        
+        self.default_model = model_id
+        return True
+    
+    def update_models_cache(self, source: Optional[str] = None) -> bool:
+        """Update the models cache.
+        
+        Args:
+            source: Source to update ('ollama', 'huggingface')
+            
+        Returns:
+            bool: True if the cache was updated successfully
+        """
+        if source:
+            manager = self._get_manager(source)
+            if hasattr(manager, 'update_cache'):
+                return manager.update_cache()
+            return False
+        
+        # Update all managers that support it
+        success = True
+        for manager in self._managers.values():
+            try:
+                if hasattr(manager, 'update_cache'):
+                    if not manager.update_cache():
+                        success = False
+            except Exception as e:
+                logger.error(f"Error updating cache for {manager.__class__.__name__}: {e}")
+                success = False
+        
+        return success
         return self.models
     
     def get_model_info(self, model_name: str) -> Optional[Dict]:

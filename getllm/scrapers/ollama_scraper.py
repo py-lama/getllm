@@ -1,66 +1,39 @@
 """
-Ollama Models Scraper
+Ollama Models Fetcher
 
-This module provides functionality to scrape model information from the Ollama website.
+This module provides functionality to fetch model information from the Ollama API.
 """
 
 import json
 import time
+import requests
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+# Ollama API endpoints
+OLLAMA_API_BASE = "https://ollama.ai"
+OLLAMA_LIBRARY_URL = f"{OLLAMA_API_BASE}/library"
 
 
 class OllamaModelsScraper:
-    """Scraper for Ollama models."""
+    """Fetcher for Ollama models using the Ollama API."""
     
-    BASE_URL = "https://ollama.ai/library"
-    
-    def __init__(self, headless: bool = True):
+    def __init__(self, api_base: str = None):
         """
-        Initialize the OllamaModelsScraper.
+        Initialize the OllamaModelsFetcher.
         
         Args:
-            headless: Whether to run the browser in headless mode.
+            api_base: Base URL for the Ollama API. Defaults to the official API.
         """
-        self.headless = headless
-        self.driver = None
+        self.api_base = api_base or OLLAMA_API_BASE
     
     def __enter__(self):
         """Context manager entry."""
-        self.setup_driver()
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
-        self.close()
-    
-    def setup_driver(self):
-        """Set up the Selenium WebDriver."""
-        options = Options()
-        if self.headless:
-            options.add_argument("--headless")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--window-size=1920,1080")
-        
-        service = Service(ChromeDriverManager().install())
-        self.driver = webdriver.Chrome(service=service, options=options)
-    
-    def close(self):
-        """Close the WebDriver."""
-        if self.driver:
-            self.driver.quit()
-            self.driver = None
+        pass
     
     def get_models(self) -> List[Dict[str, Any]]:
         """
@@ -69,103 +42,63 @@ class OllamaModelsScraper:
         Returns:
             List of model dictionaries with metadata.
         """
-        if not self.driver:
-            self.setup_driver()
-        
-        models = []
-        page = 1
-        
-        while True:
-            url = f"{self.BASE_URL}?page={page}" if page > 1 else self.BASE_URL
-            print(f"Fetching page {page}...")
+        try:
+            response = requests.get(OLLAMA_LIBRARY_URL, timeout=30)
+            response.raise_for_status()
             
-            self.driver.get(url)
-            
-            # Wait for the models to load
-            try:
-                WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "model-item"))
-                )
-            except Exception as e:
-                print(f"Error waiting for models to load on page {page}: {e}")
-                break
-            
-            # Scroll to load all models (if needed)
-            last_height = self.driver.execute_script("return document.body.scrollHeight")
-            while True:
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(2)  # Wait for content to load
-                new_height = self.driver.execute_script("return document.body.scrollHeight")
-                if new_height == last_height:
-                    break
-                last_height = new_height
-            
-            # Parse the page with BeautifulSoup
-            soup = BeautifulSoup(self.driver.page_source, 'html.parser')
-            model_elements = soup.find_all('div', class_='model-item')
-            
-            if not model_elements:
-                print(f"No more models found on page {page}")
-                break
+            models_data = response.json()
+            if not isinstance(models_data, list):
+                print("Unexpected response format from Ollama API")
+                return []
                 
-            print(f"Found {len(model_elements)} models on page {page}")
-            
-            # Process models on this page
-            page_models = []
-            for model_elem in model_elements:
+            models = []
+            for model_data in models_data:
                 try:
-                    # Extract model name and tag
-                    name_elem = model_elem.find('h3')
-                    if not name_elem:
+                    name = model_data.get('name', '')
+                    if not name:
                         continue
                         
-                    name_parts = name_elem.text.strip().split(':')
-                    name = name_parts[0].strip()
-                    tag = name_parts[1].strip() if len(name_parts) > 1 else 'latest'
+                    # Get tags for this model
+                    tags_url = f"{OLLAMA_LIBRARY_URL}/{name}"
+                    tags_response = requests.get(tags_url, timeout=30)
+                    tags_data = tags_response.json() if tags_response.status_code == 200 else {}
                     
-                    # Extract model metadata
-                    metadata = {
-                        'name': name,
-                        'tag': tag,
-                        'full_name': f"{name}:{tag}",
-                        'source': 'ollama',
-                        'url': f"https://ollama.ai/library/{name}",
-                        'metadata': {}
-                    }
-                    
-                    # Extract description if available
-                    desc_elem = model_elem.find('p')
-                    if desc_elem:
-                        metadata['description'] = desc_elem.text.strip()
-                    
-                    # Extract size if available
-                    size_elem = model_elem.find('span', class_='size')
-                    if size_elem:
-                        metadata['size'] = size_elem.text.strip()
-                    
-                    # Extract pull count if available
-                    pull_elem = model_elem.find('span', class_='pulls')
-                    if pull_elem:
-                        metadata['pulls'] = pull_elem.text.strip()
-                    
-                    page_models.append(metadata)
-                    
+                    # Process each tag
+                    for tag_name, tag_info in tags_data.get('tags', {}).items():
+                        full_name = f"{name}:{tag_name}" if tag_name != 'latest' else name
+                        
+                        model_info = {
+                            'name': name,
+                            'tag': tag_name,
+                            'full_name': full_name,
+                            'source': 'ollama',
+                            'url': f"https://ollama.ai/library/{name}",
+                            'metadata': {
+                                'size': tag_info.get('size', 0),
+                                'digest': tag_info.get('digest', ''),
+                                'last_modified': tag_info.get('last_modified', '')
+                            }
+                        }
+                        
+                        # Add model details if available
+                        if 'details' in tag_info:
+                            model_info['metadata'].update({
+                                'architecture': tag_info['details'].get('architecture', ''),
+                                'os': tag_info['details'].get('os', ''),
+                                'created': tag_info['details'].get('created', '')
+                            })
+                        
+                        models.append(model_info)
+                        
                 except Exception as e:
-                    print(f"Error parsing model element: {e}")
+                    print(f"Error processing model {name}: {e}")
                     continue
+                    
+            return models
             
-            models.extend(page_models)
-            page += 1
-            
-            # Add a small delay between page requests
-            time.sleep(1)
-            
-            # For testing, limit to first 3 pages
-            if page > 3:  # Remove this in production
-                print("Reached page limit for testing")
-                break
-                
-        return models
+        except requests.exceptions.RequestException as e:
+            print(f"Error fetching models from Ollama API: {e}")
+            return []
     
     def save_models_to_file(self, file_path: str) -> bool:
         """
@@ -199,10 +132,28 @@ def update_ollama_models_cache(file_path: Optional[str] = None) -> bool:
         True if successful, False otherwise.
     """
     if file_path is None:
-        from ..utils.config import get_models_dir
-        cache_dir = get_models_dir()
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        file_path = cache_dir / "ollama_models.json"
+        # Create the cache directory if it doesn't exist
+        cache_dir = os.path.join(os.path.expanduser('~'), '.getllm', 'cache')
+        os.makedirs(cache_dir, exist_ok=True)
+        file_path = os.path.join(cache_dir, 'ollama_models.json')
+    
+    try:
+        with OllamaModelsScraper() as scraper:
+            models = scraper.get_models()
+            if not models:
+                print("❌ No models found in the Ollama library")
+                return False
+                
+            # Save the models to the cache file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(models, f, indent=2, ensure_ascii=False)
+            
+            print(f"✅ Successfully updated Ollama models cache with {len(models)} models")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Error updating Ollama models cache: {str(e)}")
+        return False
     
     try:
         with OllamaModelsScraper() as scraper:
