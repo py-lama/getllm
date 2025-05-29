@@ -419,26 +419,34 @@ def main():
     parser.add_argument("-S", "--find-model", dest="search", metavar="QUERY", help="Alias for --search")
     parser.add_argument("--update-hf", action="store_true", help="Update models list from Hugging Face")
     
-    # Only add subparsers if not using direct prompt
-    if not direct_prompt:
-        # Subcommands
-        subparsers = parser.add_subparsers(dest="command")
-        
-        # Code generation command
-        code_parser = subparsers.add_parser("code", help="Generate Python code using LLM models")
-        code_parser.add_argument("prompt", nargs="+", help="Task to be performed by Python code")
-        
-        # Model management commands
-        subparsers.add_parser("list", help="List available models (from models.json)")
-        parser_install = subparsers.add_parser("install", help="Install a model using Ollama")
-        parser_install.add_argument("model", nargs="?", help="Name of the model to install. If not provided, will show available models.")
-        subparsers.add_parser("installed", help="List installed models (ollama list)")
-        parser_setdef = subparsers.add_parser("set-default", help="Set the default model")
-        parser_setdef.add_argument("model", help="Name of the model to set as default")
-        subparsers.add_parser("default", help="Show the default model")
-        subparsers.add_parser("update", help="Update the list of models from ollama.com/library")
-        subparsers.add_parser("test", help="Test the default model")
-        subparsers.add_parser("interactive", help="Run in interactive mode")
+    # Create subparsers for commands
+    subparsers = parser.add_subparsers(dest="command")
+    
+    # Code generation command
+    code_parser = subparsers.add_parser("code", help="Generate Python code using LLM models")
+    code_parser.add_argument("prompt", nargs="+", help="Task to be performed by Python code")
+    
+    # Model management commands
+    subparsers.add_parser("list", help="List available models (from models.json)")
+    
+    parser_install = subparsers.add_parser("install", help="Install a model using Ollama")
+    parser_install.add_argument("model", nargs="?", help="Name of the model to install. If not provided, will show available models.")
+    
+    subparsers.add_parser("installed", help="List installed models (ollama list)")
+    
+    parser_setdef = subparsers.add_parser("set-default", help="Set the default model")
+    parser_setdef.add_argument("model", help="Name of the model to set as default")
+    
+    subparsers.add_parser("default", help="Show the default model")
+    
+    # Update command with mock support
+    update_parser = subparsers.add_parser("update", help="Update the list of models from ollama.com/library")
+    update_parser.add_argument("--mock", action="store_true", help="Run in mock mode (no Ollama required)")
+    
+    subparsers.add_parser("test", help="Test the default model")
+    
+    interactive_parser = subparsers.add_parser("interactive", help="Run in interactive mode")
+    interactive_parser.add_argument("--mock", action="store_true", help="Run in mock mode (no Ollama required)")
     
     # First check for version flag in the raw arguments
     if "--version" in sys.argv[1:]:

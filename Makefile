@@ -29,7 +29,7 @@ clean:
 # Run tests
 test: setup
 	@echo "Testing PyLLM..."
-	@. venv/bin/activate && python -m unittest discover
+	@. venv/bin/activate && venv/bin/python -m unittest discover
 
 # Run command tests
 test-commands: setup
