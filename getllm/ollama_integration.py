@@ -647,23 +647,35 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
             self.ollama_process.wait()
             logger.info("Ollama server stopped")
 
-    def check_model_availability(self) -> bool:
+    def check_model_availability(self):
         """
         Check if the selected model is available in Ollama.
         Returns True if the model is available, False otherwise.
         If the model is not available but auto-install is enabled, attempts to install it.
         """
         try:
-            # Get list of available models from Ollama
-            response = requests.get(self.list_api_url, timeout=10)
-            response.raise_for_status()
-            available_models = [tag['name'] for tag in response.json().get('models', [])]
+            # First check if Ollama is running
+            if not self.check_server_running():
+                logger.warning("Ollama server is not running")
+                if not self.start_ollama():
+                    return False
             
-            # If the model is available, return True
+            # Check if the model is available
+            response = requests.get(self.list_api_url)
+            if response.status_code != 200:
+                logger.error(f"Failed to list models: {response.text}")
+                return False
+            
+            models = response.json().get('models', [])
+            available_models = [m.get('name', '') for m in models]
+            
+            logger.debug(f"Available models: {available_models}")
+            
+            # Check if the current model is available
             if self.model in available_models:
                 return True
-                
-            # Special handling for SpeakLeash/Bielik models - check if already installed with a different name
+            
+            # Special handling for Bielik models - check if already installed with a different name
             if self.model.lower().startswith('speakleash/bielik'):
                 for model in available_models:
                     if model.startswith('bielik-custom-'):
@@ -679,22 +691,28 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
                             print(f"Increased API timeout to 120 seconds for Bielik model.")
                         
                         return True
-                
+            
             # Log available models for debugging
             logger.warning(f"Model {self.model} not found in Ollama. Available models: {available_models}")
             
-            # If user explicitly specified a model and it's not available, try to install it
-            if self.original_model_specified:
-                # Check if we should try to automatically install the model
-                auto_install = os.getenv('OLLAMA_AUTO_INSTALL_MODEL', 'True').lower() in ('true', '1', 't')
-                if auto_install:
-                    print(f"\nModel {self.model} not found. Attempting to install it...")
-                    if self.install_model(self.model):
+            # Try to install the model automatically
+            print(f"\nModel '{self.model}' is not installed. Attempting to install it now...")
+            if self.install_model(self.model):
+                print(f"Successfully installed model '{self.model}'")
+                return True
+            
+            # If installation failed, try fallback models
+            print(f"Failed to install model '{self.model}'. Trying fallback models...")
+            for fallback in self.fallback_models:
+                if fallback != self.model and fallback not in available_models:
+                    print(f"Trying fallback model: {fallback}")
+                    if self.install_model(fallback):
+                        self.model = fallback
+                        print(f"Using fallback model: {fallback}")
                         return True
-                
-                # Check if we should try to automatically use an available model
-                if os.getenv('OLLAMA_AUTO_SELECT_MODEL', 'True').lower() in ('true', '1', 't'):
-                    # Try to find a suitable model from the available ones
+            
+            logger.error("No suitable model could be installed")
+            return False
                     for model in available_models:
                         if 'code' in model.lower() or 'llama' in model.lower() or 'phi' in model.lower():
                             logger.info(f"Automatically selecting available model: {model} instead of {self.model}")
