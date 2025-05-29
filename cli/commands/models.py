@@ -91,17 +91,20 @@ class ListModelsCommand(BaseCommand):
             
             if ollama_models_list:
                 # Convert Ollama models to a consistent format
-                ollama_models_formatted = [
-                    {
+                ollama_models_formatted = []
+                for m in ollama_models_list:
+                    if not isinstance(m, dict):
+                        continue
+                    model_dict = {
                         'id': f"ollama/{m.get('name', '')}",
                         'name': m.get('name', ''),
-                        'description': m.get('description', ''),
+                        'description': m.get('description', 'No description'),
                         'source': 'ollama',
                         'sizes': m.get('sizes', []),
-                        'type': 'ollama'
+                        'type': 'ollama',
+                        'installed': False  # Will be updated by display_models
                     }
-                    for m in ollama_models_list
-                ]
+                    ollama_models_formatted.append(model_dict)
                 
                 if source == 'ollama':
                     # If only showing Ollama models, use the enhanced display_models
@@ -115,11 +118,15 @@ class ListModelsCommand(BaseCommand):
                     return
                 else:
                     # If showing all sources, include Ollama models in the general list
-                    models = list(list_models()) + ollama_models_formatted
+                    try:
+                        models = list(list_models() or []) + ollama_models_formatted
+                    except Exception as e:
+                        console.print(f"[yellow]Warning: Could not load other models: {e}[/yellow]")
+                        models = ollama_models_formatted
             else:
-                models = list_models()
+                models = list(list_models() or [])
         else:
-            models = list_models()
+            models = list(list_models() or [])
         
         # Filter by source if not 'all'
         if source != 'all':
