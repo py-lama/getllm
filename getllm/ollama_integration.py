@@ -690,60 +690,49 @@ python -c "from bexy import DockerSandbox; DockerSandbox().stop('ollama-bexy-san
                             os.environ['OLLAMA_TIMEOUT'] = '120'
                             print(f"Increased API timeout to 120 seconds for Bielik model.")
                         
-                        return True
-            
-            # Log available models for debugging
-            logger.warning(f"Model {self.model} not found in Ollama. Available models: {available_models}")
-            
-            # Try to install the model automatically
             print(f"\nModel '{self.model}' is not installed. Attempting to install it now...")
             if self.install_model(self.model):
                 print(f"Successfully installed model '{self.model}'")
                 return True
             
-            # If installation failed, try fallback models
-            print(f"Failed to install model '{self.model}'. Trying fallback models...")
-            for fallback in self.fallback_models:
-                if fallback != self.model and fallback not in available_models:
-                    print(f"Trying fallback model: {fallback}")
-                    if self.install_model(fallback):
-                        self.model = fallback
-                        print(f"Using fallback model: {fallback}")
+            # If installation failed and we're not in strict mode, try to find a suitable alternative
+            if os.getenv('OLLAMA_STRICT_MODE', 'false').lower() != 'true':
+                # Try to find a similar model from available ones
+                for model in available_models:
+                    if 'code' in model.lower() or 'llama' in model.lower() or 'phi' in model.lower():
+                        logger.info(f"Automatically selecting available model: {model} instead of {self.model}")
+                        self.model = model
                         return True
-            
-            logger.error("No suitable model could be installed")
-            return False
-                    for model in available_models:
-                        if 'code' in model.lower() or 'llama' in model.lower() or 'phi' in model.lower():
-                            logger.info(f"Automatically selecting available model: {model} instead of {self.model}")
-                            self.model = model
-                            return True
-                    # If no suitable model found, use the first available one
-                    if available_models:
-                        logger.info(f"Automatically selecting first available model: {available_models[0]} instead of {self.model}")
-                        self.model = available_models[0]
-                        return True
-                else:
-                    # Don't use fallbacks if user explicitly specified a model
-                    return False
-            
-            # Try fallback models
-            for fallback in self.fallback_models:
-                if fallback in available_models:
-                    self.model = fallback
-                    logger.info(f"Using fallback model: {fallback}")
+                
+                # If no suitable model found, use the first available one
+                if available_models:
+                    logger.info(f"Automatically selecting first available model: {available_models[0]} instead of {self.model}")
+                    self.model = available_models[0]
                     return True
-                    
-            # If no fallbacks are available, return False
+            
             return False
-        except Exception as e:
-            logger.warning(f"Could not check model availability: {e}")
-            return False  # Assume model is not available if we can't check
-
-    def _check_disk_space(self, required_space_gb=None, model_name=None):
-        """
-        Check if there is enough disk space available for model installation.
         
+        # For non-specified models, try to install the requested model first
+        print(f"\nModel '{self.model}' is not installed. Attempting to install it now...")
+        if self.install_model(self.model):
+            print(f"Successfully installed model '{self.model}'")
+            return True
+        
+        # If installation failed, try fallback models
+        print(f"Failed to install model '{self.model}'. Trying fallback models...")
+        for fallback in self.fallback_models:
+            if fallback != self.model:
+                print(f"Trying fallback model: {fallback}")
+                if self.install_model(fallback):
+                    self.model = fallback
+                    print(f"Using fallback model: {fallback}")
+                    return True
+        
+        # If no fallbacks worked, try to use any available model
+        if available_models:
+            logger.info(f"Using available model: {available_models[0]}")
+            self.model = available_models[0]
+            return True
         Args:
             required_space_gb: Required space in GB, if known
             model_name: Name of the model to check space for
