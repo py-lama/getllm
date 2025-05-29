@@ -384,25 +384,38 @@ def main():
         # Parse just the options
         args_to_parse = options
     
-    # Create the argument parser
-    parser = argparse.ArgumentParser(description="getllm CLI - LLM Model Management and Code Generation")
+    # Create the argument parser with a custom formatter that shows global options in help
+    class CustomHelpFormatter(argparse.RawDescriptionHelpFormatter):
+        def _format_action(self, action):
+            # This is a hack to show global options in the help text
+            parts = super()._format_action(action)
+            if action.dest in ['mock', 'debug', 'log_file', 'version']:
+                parts = parts.replace('optional arguments', 'global arguments')
+            return parts
+
+    parser = argparse.ArgumentParser(
+        description="getllm CLI - LLM Model Management and Code Generation",
+        formatter_class=CustomHelpFormatter
+    )
     
     # Global options
+    global_group = parser.add_argument_group('global arguments')
+    global_group.add_argument("--mock", action="store_true", help="Use mock mode (no Ollama required)")
+    global_group.add_argument("--debug", action="store_true", help="Enable debug mode with verbose logging")
+    global_group.add_argument("--log-file", help="Specify custom log file path")
+    global_group.add_argument("--version", action="store_true", help="Show version information")
+    
+    # Command-specific options
     parser.add_argument("-i", "--interactive", action="store_true", help="Run in interactive mode")
-    parser.add_argument("--mock", action="store_true", help="Use mock mode (no Ollama required)")
-    parser.add_argument("--debug", action="store_true", help="Enable debug mode with verbose logging")
-    parser.add_argument("--log-file", help="Specify custom log file path")
-    parser.add_argument("--version", action="store_true", help="Show version information")
     parser.add_argument("-m", "--model", help="Name of the Ollama model to use")
     parser.add_argument("-t", "--template", 
-                        choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
-                        default="platform_aware",
-                        help="Type of template to use")
+                       choices=["basic", "platform_aware", "dependency_aware", "testable", "secure", "performance", "pep8"],
+                       default="platform_aware",
+                       help="Type of template to use")
     parser.add_argument("-d", "--dependencies", help="List of allowed dependencies (only for template=dependency_aware)")
     parser.add_argument("-s", "--save", action="store_true", help="Save the generated code to a file")
     parser.add_argument("-r", "--run", action="store_true", help="Run the generated code after creation")
     parser.add_argument("--search", metavar="QUERY", help="Search for models on Hugging Face matching the query")
-    # Add a separate search command for better CLI experience
     parser.add_argument("-S", "--find-model", dest="search", metavar="QUERY", help="Alias for --search")
     parser.add_argument("--update-hf", action="store_true", help="Update models list from Hugging Face")
     
