@@ -50,21 +50,30 @@ class OllamaService:
             Dictionary containing model information, or None if not found.
         """
         try:
-            result = subprocess.run(
-                ["ollama", "show", "--json", model_name],
-                capture_output=True,
-                text=True
-            )
-            
-            if result.returncode == 0:
-                return json.loads(result.stdout)
+            # Try using the API first
+            try:
+                response = requests.get(f"http://localhost:11434/api/tags")
+                if response.status_code == 200:
+                    data = response.json()
+                    for model in data.get('models', []):
+                        if model.get('name') == model_name or model.get('model') == model_name:
+                            return model
+            except requests.exceptions.RequestException:
+                pass
                 
-            # If the model is not found locally, try to find it in the cache
-            models = self._load_cached_models()
-            for model in models:
-                if model.get('name') == model_name:
-                    return model
-                    
+            # Fallback to CLI if API fails
+            try:
+                result = subprocess.run(
+                    ["ollama", "show", "--json", model_name],
+                    capture_output=True,
+                    text=True
+                )
+                
+                if result.returncode == 0:
+                    return json.loads(result.stdout)
+            except (subprocess.SubprocessError, json.JSONDecodeError):
+                pass
+                
             return None
             
         except (subprocess.SubprocessError, json.JSONDecodeError):
@@ -80,14 +89,54 @@ class OllamaService:
             True if the pull was successful, False otherwise.
         """
         try:
-            result = subprocess.run(
-                ["ollama", "pull", model_name],
-                capture_output=True,
-                text=True
-            )
-            return result.returncode == 0
-            
-        except subprocess.SubprocessError:
+            # Try using the API first
+            try:
+                response = requests.post(
+                    "http://localhost:11434/api/pull",
+                    json={"name": model_name},
+                    stream=True
+                )
+                
+                if response.status_code == 200:
+                    # Read the response in chunks to show progress
+                    for line in response.iter_lines():
+                        if line:
+                            try:
+                                data = json.loads(line)
+                                status = data.get('status', '')
+                                if status:
+                                    print(f"Status: {status}")
+                            except json.JSONDecodeError:
+                                pass
+                    
+                    # Update the cache after successful pull
+                    self.update_models_cache()
+                    return True
+                
+                return False
+                
+            except requests.exceptions.RequestException:
+                # Fallback to CLI if API fails
+                try:
+                    result = subprocess.run(
+                        ["ollama", "pull", model_name],
+                        capture_output=True,
+                        text=True
+                    )
+                    
+                    if result.returncode == 0:
+                        # Update the cache after successful pull
+                        self.update_models_cache()
+                        return True
+                        
+                    return False
+                    
+                except subprocess.SubprocessError as e:
+                    print(f"Error pulling model: {str(e)}")
+                    return False
+                    
+        except Exception as e:
+            print(f"Error in pull_model: {str(e)}")
             return False
     
     def list_installed_models(self) -> List[str]:
@@ -230,13 +279,18 @@ class OllamaService:
         Returns:
             List of model dictionaries, or empty list if cache doesn't exist or is invalid.
         """
-        if not self.cache_file.exists():
-            return []
-            
         try:
+            if not self.cache_file.exists():
+                return []
+                
             with open(self.cache_file, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
+                data = json.load(f)
+                if not isinstance(data, list):
+                    return []
+                return data
+                
+        except (json.JSONDecodeError, IOError, OSError) as e:
+            print(f"Warning: Failed to load cached models: {str(e)}")
             return []
     
     def _save_models_to_cache(self, models: List[Dict]) -> bool:
@@ -248,9 +302,28 @@ class OllamaService:
         Returns:
             True if successful, False otherwise.
         """
+        if not models or not isinstance(models, list):
+            return False
+            
         try:
-            with open(self.cache_file, 'w', encoding='utf-8') as f:
+            # Ensure the directory exists
+            self.logs_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Write to a temporary file first
+            temp_file = self.cache_file.with_suffix('.tmp')
+            with open(temp_file, 'w', encoding='utf-8') as f:
                 json.dump(models, f, indent=2, ensure_ascii=False)
+            
+            # Rename the temp file to the final name (atomic on POSIX)
+            temp_file.replace(self.cache_file)
             return True
-        except IOError:
+            
+        except (IOError, OSError, json.JSONEncodeError) as e:
+            print(f"Error saving models to cache: {str(e)}")
+            # Clean up temp file if it exists
+            if 'temp_file' in locals() and temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except OSError:
+                    pass
             return False

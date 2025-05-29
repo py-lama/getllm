@@ -60,6 +60,19 @@ class OllamaServer:
             return result.returncode == 0
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
+            
+    def list_models(self) -> List[Dict]:
+        """List all available Ollama models.
+        
+        Returns:
+            List of dictionaries containing model information
+        """
+        try:
+            # Use the model manager to list models
+            return self.model_manager.list_installed_models()
+        except Exception as e:
+            logger.error(f"Error listing Ollama models: {e}")
+            raise
     
     def install_ollama(self, method: str = 'auto') -> bool:
         """Install Ollama using the specified method.
