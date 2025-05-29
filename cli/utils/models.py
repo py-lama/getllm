@@ -9,10 +9,11 @@ from getllm import ModelManager, ModelInfo
 console = Console()
 
 def display_models(
-    models: List[ModelInfo],
+    models: List[Any],
     installed_only: bool = False,
     source: Optional[str] = None,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    show_sizes: bool = False
 ) -> None:
     """Display a list of models in a formatted table.
     
@@ -26,33 +27,81 @@ def display_models(
         console.print("[yellow]No models found.[/yellow]")
         return
     
-    # Apply filters
-    if installed_only:
-        manager = ModelManager()
-        models = [m for m in models if manager.is_model_installed(m.id)]
+    # Filter models
+    filtered_models = []
+    manager = ModelManager()
     
-    if source:
-        models = [m for m in models if m.source.value.lower() == source.lower()]
+    for model in models:
+        # Handle both ModelInfo objects and dictionaries
+        if hasattr(model, 'id'):
+            # ModelInfo object
+            model_id = model.id
+            model_source = model.source.value if hasattr(model.source, 'value') else str(model.source)
+            model_dict = {
+                'id': model_id,
+                'name': getattr(model, 'name', ''),
+                'source': model_source,
+                'type': model.model_type.value if hasattr(model, 'model_type') and model.model_type else 'N/A',
+                'installed': manager.is_model_installed(model_id),
+                'sizes': getattr(model, 'sizes', [])
+            }
+        else:
+            # Dictionary
+            model_dict = {
+                'id': str(model.get('id', '')),
+                'name': str(model.get('name', '')),
+                'source': str(model.get('source', 'unknown')),
+                'type': str(model.get('type', model.get('model_type', 'N/A'))),
+                'installed': manager.is_model_installed(model.get('id', '')),
+                'sizes': model.get('sizes', [])
+            }
+        
+        # Apply filters
+        if installed_only and not model_dict['installed']:
+            continue
+            
+        if source and model_dict['source'].lower() != source.lower():
+            continue
+            
+        filtered_models.append(model_dict)
     
+    # Apply limit
     if limit is not None:
-        models = models[:limit]
+        filtered_models = filtered_models[:limit]
+    
+    if not filtered_models:
+        console.print("[yellow]No models found matching the criteria.[/yellow]")
+        return
     
     # Create and display table
     table = Table(title="Available Models")
     table.add_column("ID", style="cyan")
     table.add_column("Name", style="green")
     table.add_column("Source", style="magenta")
+    
+    if show_sizes:
+        table.add_column("Sizes", style="yellow")
+    
     table.add_column("Type", style="yellow")
     table.add_column("Installed", style="green")
     
-    for model in models:
-        table.add_row(
-            model.id,
-            model.name,
-            model.source.value,
-            model.model_type.value if model.model_type else "N/A",
-            "✓" if manager.is_model_installed(model.id) else "✗"
-        )
+    for model in filtered_models:
+        row = [
+            model['id'],
+            model['name'],
+            model['source'],
+        ]
+        
+        if show_sizes:
+            sizes = model.get('sizes', [])
+            row.append(", ".join(sizes) if sizes else "N/A")
+        
+        row.extend([
+            model['type'],
+            "✓" if model['installed'] else "✗"
+        ])
+        
+        table.add_row(*row)
     
     console.print(table)
 

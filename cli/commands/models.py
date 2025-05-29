@@ -1,5 +1,6 @@
 """Model-related CLI commands."""
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
 import click
 from rich.console import Console
@@ -9,7 +10,8 @@ from ..utils import (
     display_models,
     install_model_with_progress,
     uninstall_model_with_progress,
-    display_model_info
+    display_model_info,
+    ollama_models
 )
 from getllm import ModelManager, list_models
 
@@ -44,6 +46,21 @@ class ListModelsCommand(BaseCommand):
                         'default': None,
                         'help': 'Limit the number of results'
                     }
+                },
+                {
+                    'param_decls': ['--details', '-d'],
+                    'kwargs': {
+                        'is_flag': True,
+                        'help': 'Show detailed information about each model'
+                    }
+                },
+                {
+                    'param_decls': ['--search'],
+                    'kwargs': {
+                        'type': str,
+                        'default': None,
+                        'help': 'Search for models by name or description'
+                    }
                 }
             ]
         }
@@ -53,20 +70,81 @@ class ListModelsCommand(BaseCommand):
         source: str, 
         installed: bool, 
         limit: Optional[int],
+        details: bool,
+        search: Optional[str],
         **kwargs
     ) -> None:
         """Execute the list models command."""
-        models = list_models()
+        console = Console()
+        
+        # Handle Ollama models
+        if source in ['all', 'ollama']:
+            ollama_models_list = ollama_models.load_ollama_models()
+            
+            # Apply search if provided
+            if search:
+                ollama_models_list = ollama_models.search_ollama_models(
+                    search, 
+                    models=ollama_models_list,
+                    case_sensitive=False
+                )
+            
+            if ollama_models_list:
+                # Convert Ollama models to a consistent format
+                ollama_models_formatted = [
+                    {
+                        'id': f"ollama/{m.get('name', '')}",
+                        'name': m.get('name', ''),
+                        'description': m.get('description', ''),
+                        'source': 'ollama',
+                        'sizes': m.get('sizes', []),
+                        'type': 'ollama'
+                    }
+                    for m in ollama_models_list
+                ]
+                
+                if source == 'ollama':
+                    # If only showing Ollama models, use the enhanced display_models
+                    display_models(
+                        models=ollama_models_formatted,
+                        installed_only=installed,
+                        source=source,
+                        limit=limit,
+                        show_sizes=True
+                    )
+                    return
+                else:
+                    # If showing all sources, include Ollama models in the general list
+                    models = list(list_models()) + ollama_models_formatted
+            else:
+                models = list_models()
+        else:
+            models = list_models()
         
         # Filter by source if not 'all'
         if source != 'all':
-            models = [m for m in models if m.source.value.lower() == source.lower()]
+            models = [
+                m for m in models 
+                if str(m.get('source', '')).lower() == source.lower()
+            ]
+        
+        # Apply search if provided
+        if search:
+            search = search.lower()
+            models = [
+                m for m in models
+                if (search in m.get('id', '').lower() or 
+                    search in m.get('name', '').lower() or
+                    search in m.get('description', '').lower())
+            ]
         
         # Display the filtered models
         display_models(
             models=models,
             installed_only=installed,
-            limit=limit
+            source=source,
+            limit=limit,
+            show_sizes=(source == 'ollama')
         )
 
 

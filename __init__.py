@@ -24,12 +24,18 @@ from getllm.getllm.ollama import (
     start_ollama_server,
     install_ollama_model,
     list_ollama_models,
-    get_ollama_model_info,
-    remove_ollama_model,
-    pull_ollama_model,
-    push_ollama_model,
+    query_ollama,
     OllamaError,
-    ModelNotFoundError
+    OllamaInstallationError,
+    OllamaStartupError,
+    ModelNotFoundError,
+    ModelInstallationError,
+    ModelGenerationError,
+    APIError,
+    AuthenticationError,
+    RateLimitExceededError,
+    InsufficientDiskSpaceError,
+    ModelValidationError
 )
 
 # Import the CLI
@@ -56,14 +62,20 @@ __all__ = [
     'start_ollama_server',
     'install_ollama_model',
     'list_ollama_models',
-    'get_ollama_model_info',
-    'remove_ollama_model',
-    'pull_ollama_model',
-    'push_ollama_model',
+    'query_ollama',
     
     # Exceptions
     'OllamaError',
-    'ModelNotFoundError'
+    'OllamaInstallationError',
+    'OllamaStartupError',
+    'ModelNotFoundError',
+    'ModelInstallationError',
+    'ModelGenerationError',
+    'APIError',
+    'AuthenticationError',
+    'RateLimitExceededError',
+    'InsufficientDiskSpaceError',
+    'ModelValidationError'
 ]
 
 # Only expose cli if available
