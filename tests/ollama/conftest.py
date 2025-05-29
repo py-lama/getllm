@@ -1,6 +1,4 @@
-""
-Pytest configuration and fixtures for Ollama integration tests.
-"""
+"""Pytest configuration and fixtures for Ollama integration tests."""
 import os
 import pytest
 import tempfile

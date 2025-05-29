@@ -418,7 +418,7 @@ def main():
         # Model management commands
         subparsers.add_parser("list", help="List available models (from models.json)")
         parser_install = subparsers.add_parser("install", help="Install a model using Ollama")
-        parser_install.add_argument("model", help="Name of the model to install")
+        parser_install.add_argument("model", nargs="?", help="Name of the model to install. If not provided, will show available models.")
         subparsers.add_parser("installed", help="List installed models (ollama list)")
         parser_setdef = subparsers.add_parser("set-default", help="Set the default model")
         parser_setdef.add_argument("model", help="Name of the model to set as default")
@@ -427,6 +427,12 @@ def main():
         subparsers.add_parser("test", help="Test the default model")
         subparsers.add_parser("interactive", help="Run in interactive mode")
     
+    # First check for version flag in the raw arguments
+    if "--version" in sys.argv[1:]:
+        from getllm import __version__
+        print(f"getLLM version {__version__}")
+        return 0
+        
     # Parse the arguments
     if direct_prompt:
         # For direct prompt, parse only the options
@@ -435,7 +441,7 @@ def main():
     else:
         # Normal parsing for commands
         args = parser.parse_args()
-        if args.command == "code":
+        if hasattr(args, 'prompt') and args.command == "code":
             prompt = " ".join(args.prompt)
     
     # Apply environment variables to args if not explicitly set
@@ -450,8 +456,8 @@ def main():
     # Configure logging based on debug flag
     configure_logging(debug=args.debug, log_file=args.log_file)
     
-    # Handle version flag
-    if args.version:
+    # Handle version flag (kept for backward compatibility with direct API calls)
+    if hasattr(args, 'version') and args.version:
         from getllm import __version__
         print(f"getLLM version {__version__}")
         return 0
@@ -521,6 +527,13 @@ def main():
             for m in models_list:
                 print(f"  {m.get('name', '-'):<25} {m.get('size','') or m.get('size_b','')}  {m.get('desc','')}")
         elif args.command == "install":
+            if not args.model:
+                print("No model specified. Available models:")
+                models_list = models.get_models()
+                for m in models_list:
+                    print(f"- {m.get('name', 'unknown')}")
+                print("\nTo install a model, run: getllm install <model-name>")
+                return 0
             models.install_model(args.model)
         elif args.command == "installed":
             models.list_installed_models()
