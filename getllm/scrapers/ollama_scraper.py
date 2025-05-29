@@ -10,9 +10,9 @@ import requests
 from pathlib import Path
 from typing import List, Dict, Optional, Any
 
-# Ollama API endpoints
-OLLAMA_API_BASE = "https://ollama.ai"
-OLLAMA_LIBRARY_URL = f"{OLLAMA_API_BASE}/library"
+# Ollama API endpoints - using local server
+OLLAMA_API_BASE = "http://localhost:11434/api"
+OLLAMA_TAGS_URL = f"{OLLAMA_API_BASE}/tags"  # Endpoint to list local models
 
 
 class OllamaModelsScraper:
@@ -37,67 +37,70 @@ class OllamaModelsScraper:
     
     def get_models(self) -> List[Dict[str, Any]]:
         """
-        Get all available models from the Ollama library.
+        Get all available models from the local Ollama server.
         
         Returns:
             List of model dictionaries with metadata.
         """
         try:
-            response = requests.get(OLLAMA_LIBRARY_URL, timeout=30)
+            # First, try to get the list of models from the local Ollama server
+            response = requests.get(OLLAMA_TAGS_URL, timeout=30)
             response.raise_for_status()
             
-            models_data = response.json()
-            if not isinstance(models_data, list):
-                print("Unexpected response format from Ollama API")
+            data = response.json()
+            models_data = data.get('models', [])
+            
+            if not models_data:
+                print("No models found in local Ollama instance")
                 return []
                 
             models = []
-            for model_data in models_data:
+            for model in models_data:
                 try:
-                    name = model_data.get('name', '')
-                    if not name:
+                    model_name = model.get('name', '')
+                    if not model_name:
                         continue
                         
-                    # Get tags for this model
-                    tags_url = f"{OLLAMA_LIBRARY_URL}/{name}"
-                    tags_response = requests.get(tags_url, timeout=30)
-                    tags_data = tags_response.json() if tags_response.status_code == 200 else {}
+                    # Split model name into name and tag
+                    if ':' in model_name:
+                        name, tag = model_name.split(':', 1)
+                    else:
+                        name = model_name
+                        tag = 'latest'
                     
-                    # Process each tag
-                    for tag_name, tag_info in tags_data.get('tags', {}).items():
-                        full_name = f"{name}:{tag_name}" if tag_name != 'latest' else name
-                        
-                        model_info = {
-                            'name': name,
-                            'tag': tag_name,
-                            'full_name': full_name,
-                            'source': 'ollama',
-                            'url': f"https://ollama.ai/library/{name}",
-                            'metadata': {
-                                'size': tag_info.get('size', 0),
-                                'digest': tag_info.get('digest', ''),
-                                'last_modified': tag_info.get('last_modified', '')
-                            }
+                    model_info = {
+                        'name': name,
+                        'tag': tag,
+                        'full_name': model_name,
+                        'source': 'ollama',
+                        'url': f"https://ollama.ai/library/{name}",
+                        'metadata': {
+                            'size': model.get('size', 0),
+                            'digest': model.get('digest', ''),
+                            'modified_at': model.get('modified_at', '')
                         }
-                        
-                        # Add model details if available
-                        if 'details' in tag_info:
-                            model_info['metadata'].update({
-                                'architecture': tag_info['details'].get('architecture', ''),
-                                'os': tag_info['details'].get('os', ''),
-                                'created': tag_info['details'].get('created', '')
-                            })
-                        
-                        models.append(model_info)
-                        
+                    }
+                    
+                    # Add model details if available
+                    if 'details' in model:
+                        details = model['details']
+                        model_info['metadata'].update({
+                            'format': details.get('format', ''),
+                            'family': details.get('family', ''),
+                            'parameter_size': details.get('parameter_size', ''),
+                            'quantization_level': details.get('quantization_level', '')
+                        })
+                    
+                    models.append(model_info)
+                    
                 except Exception as e:
-                    print(f"Error processing model {name}: {e}")
+                    print(f"Error processing model {model_name}: {e}")
                     continue
                     
             return models
             
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching models from Ollama API: {e}")
+            print(f"Error fetching models from local Ollama server: {e}")
             return []
     
     def save_models_to_file(self, file_path: str) -> bool:
