@@ -84,8 +84,8 @@ class OllamaIntegration:
     def __init__(self, ollama_path: str = None, model: str = None):
         self.ollama_path = ollama_path or os.getenv('OLLAMA_PATH', 'ollama')
         # Set default model with fallbacks to ensure we use an available model
-        self.model = model or os.getenv('OLLAMA_MODEL', 'codellama:7b')
-        self.fallback_models = os.getenv('OLLAMA_FALLBACK_MODELS', 'codellama:7b,phi3:latest,tinyllama:latest').split(',')
+        self.model = model or os.getenv('OLLAMA_MODEL', 'llama3')
+        self.fallback_models = os.getenv('OLLAMA_FALLBACK_MODELS', 'llama3,llama-2-7b-chat').split(',')
         self.ollama_process = None
         # Ollama API endpoints
         self.base_api_url = "http://localhost:11434/api"

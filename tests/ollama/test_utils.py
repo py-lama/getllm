@@ -1,6 +1,4 @@
-""
-Tests for the Ollama utility functions.
-"""
+"""Tests for the Ollama utility functions."""
 import os
 import sys
 import pytest

@@ -553,14 +553,14 @@ def main():
         return 0
     
     # If we have a prompt, generate code
-    if prompt:
+    if prompt or (hasattr(args, 'command') and args.command == 'code' and not direct_prompt):
         # Get model and template
-        model = args.model
-        template = args.template or "platform_aware"
-        dependencies = args.dependencies
-        save = args.save
-        run = args.run
-        mock_mode = args.mock
+        model = getattr(args, 'model', None)
+        template = getattr(args, 'template', 'platform_aware')
+        dependencies = getattr(args, 'dependencies', None)
+        save = getattr(args, 'save', False)
+        run = getattr(args, 'run', False)
+        mock_mode = getattr(args, 'mock', False)
         
         # Check if Ollama is running (unless in mock mode)
         if not mock_mode:
@@ -598,10 +598,14 @@ def main():
             code = extract_python_code(code)
         
         # Display the generated code
-        print("\nGenerated Python code:")
-        print("-" * 40)
-        print(code)
-        print("-" * 40)
+        if code:
+            print("\nGenerated Python code:")
+            print("-" * 40)
+            print(code)
+            print("-" * 40)
+        else:
+            print("\nNo code was generated. The model might need to be installed.")
+            print("Try running 'getllm install <model-name>' first.")
         
         # Save the code if requested
         if save:
