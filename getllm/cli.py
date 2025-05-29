@@ -343,8 +343,12 @@ def main():
     prompt = None
     args_to_parse = sys.argv[1:]
     
+    # Check for environment variables
+    env_debug = os.environ.get('GETLLM_DEBUG', '').lower() in ('1', 'true', 'yes')
+    env_model = os.environ.get('GETLLM_MODEL', None)
+    
     # Pre-parse for debug flag to set up logging early
-    debug_mode = "--debug" in args_to_parse
+    debug_mode = "--debug" in args_to_parse or env_debug
     
     # Check if the first argument is a command or looks like a prompt
     commands = ["code", "list", "install", "installed", "set-default", "default", "update", "test", "interactive"]
@@ -433,6 +437,15 @@ def main():
         args = parser.parse_args()
         if args.command == "code":
             prompt = " ".join(args.prompt)
+    
+    # Apply environment variables to args if not explicitly set
+    if env_debug and not args.debug:
+        args.debug = True
+        logger.debug('Debug mode enabled via GETLLM_DEBUG environment variable')
+    
+    if env_model and not args.model:
+        args.model = env_model
+        logger.debug(f'Using model {args.model} from GETLLM_MODEL environment variable')
     
     # Configure logging based on debug flag
     configure_logging(debug=args.debug, log_file=args.log_file)
