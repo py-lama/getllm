@@ -146,10 +146,20 @@ publish-script-test: build
 	@. venv/bin/activate && python scripts/publish.py --test
 
 # Help
+# Update project dependencies and environment
+update: venv
+	@echo "Updating PyLLM dependencies..."
+	@. venv/bin/activate && pip install --upgrade pip setuptools wheel
+	@. venv/bin/activate && pip install --upgrade -e .
+	@. venv/bin/activate && pip install --upgrade -r requirements-dev.txt 2>/dev/null || echo "No requirements-dev.txt found, skipping..."
+	@. venv/bin/activate && pip install --upgrade -e ".[test]" 2>/dev/null || echo "No test extras found, skipping..."
+	@echo "Dependencies updated successfully!"
+
 help:
 	@echo "PyLLM Makefile"
 	@echo ""
 	@echo "Available targets:"
+	@echo "  update    - Update project dependencies and environment"
 	@echo "  setup     - Set up the project"
 	@echo "  clean     - Clean the project"
 	@echo "  test      - Run unit tests"
